@@ -1,5 +1,5 @@
 //@version=5
-indicator("Lepelle's Key Levels", shorttitle='Lepelle Key Levels', overlay=true, max_lines_count=100)
+indicator("Lepelle's Key Levels (Hunch)", shorttitle='Lepelle Key Levels (Hunch)', overlay=true, max_lines_count=120)
 //------------------------------ Global Inputs ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 linesize = input.string(defval='Small', title='Line Width', options=['Small', 'Medium', 'Large'], inline='Global Line',group='Global Settings')
 linestyle = input.string(defval='Solid', title='Line Style', options=['Solid', 'Dashed', 'Dotted'], inline='Global Line',group='Global Settings')
@@ -10,13 +10,18 @@ HidePrice = input.bool(defval=false, title='Hide Prices', inline='Global Line 2'
 GlobalTextType = input.bool(defval=false, title='Global Shorthand', tooltip='Abb. Labels',inline='Global Line 2',group='Global Settings')
 globalcoloring = input.bool(defval=false, title='Global Coloring', tooltip='Same color for all level', inline='Global Coloring',group='Global Settings')
 GlobalColor = input.color(title='', defval=color.white, inline='Global Coloring',group='Global Settings')
-//------------------------------ Time Frames-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[Today_Time, Today_High, Today_Low, Today_Open, Today_Close] = request.security(syminfo.tickerid, 'D', [time, high, low, open, close], lookahead=barmerge.lookahead_on)
-[Yesterday_Time, Yesterday_High, Yesterday_Low, Yesterday_Open, Yesterday_Close] = request.security(syminfo.tickerid, 'D', [time[1], high[1],low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
-[Previous_Time, Previous_High, Previous_Low, Previous_Open, Previous_Close] = request.security(syminfo.tickerid, 'D', [time[2], high[2],low[2], open[2], close[2]], lookahead=barmerge.lookahead_on)
-[MA_Time, ema8_price,ema21_price,sma50_price,sma100_price, sma200_price] = request.security(syminfo.tickerid, 'D', [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
-[LastWeek_Time, LastWeek_High, LastWeek_Low, LastWeek_Open, LastWeek_Close] = request.security(syminfo.tickerid, 'W', [time[1], high[1],low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
-[LastMonth_Time, LastMonth_High, LastMonth_Low, LastMonth_Open, LastMonth_Close] = request.security(syminfo.tickerid, 'M', [time[1], high[1], low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
+//------------------------------ Alternate Time Frame Data ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+// OHLC Data
+[Today_Time,     Today_High,      Today_Low,        Today_Open,       Today_Close]     = request.security(syminfo.tickerid, 'D',  [time, high, low, open, close], lookahead=barmerge.lookahead_on)
+[Yesterday_Time, Yesterday_High,  Yesterday_Low,    Yesterday_Open,   Yesterday_Close] = request.security(syminfo.tickerid, 'D',  [time[1], high[1],low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
+[Previous_Time,  Previous_High,   Previous_Low,     Previous_Open,    Previous_Close]  = request.security(syminfo.tickerid, 'D',  [time[2], high[2],low[2], open[2], close[2]], lookahead=barmerge.lookahead_on)
+[LastWeek_Time,  LastWeek_High,   LastWeek_Low,     LastWeek_Open,    LastWeek_Close]  = request.security(syminfo.tickerid, 'W',  [time[1], high[1],low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
+[LastMonth_Time, LastMonth_High,  LastMonth_Low,    LastMonth_Open,   LastMonth_Close] = request.security(syminfo.tickerid, 'M',  [time[1], high[1], low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
+// Moving Averages
+[MA_2Min_Time,   ema8_2Min_price, ema21_2Min_price, sma50_2Min_price, sma100_2Min_price, sma200_2Min_price]  = request.security(syminfo.tickerid, '2',  [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
+[MA_5Min_Time,   ema8_5Min_price, ema21_5Min_price, sma50_5Min_price, sma100_5Min_price, sma200_5Min_price]  = request.security(syminfo.tickerid, '5',  [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
+[MA_1Hour_Time,  ema8_1Hour_price,ema21_1Hour_price,sma50_1Hour_price,sma100_1Hour_price,sma200_1Hour_price] = request.security(syminfo.tickerid, '60', [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
+[MA_1Day_Time,   ema8_1Day_price, ema21_1Day_price, sma50_1Day_price, sma100_1Day_price, sma200_1Day_price]  = request.security(syminfo.tickerid, 'D',  [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
 //------------------------------ Local Inputs ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 var is_premarketrangehigh_enabled = input.bool(defval=true, title='Premarket High', group='Premarket Levels', inline='1')
 var is_premarketrangelow_enabled = input.bool(defval=true, title='Premarket Low ', group='Premarket Levels', inline='1')
@@ -40,12 +45,37 @@ var is_PrevdailyHigh_enabled = input.bool(defval=true, title='Previous High', gr
 var is_PrevdailyLow_enabled = input.bool(defval=true, title='Previous Low', group='Previous Daily Levels', inline='1')
 var PrevDailyTextType = input.bool(defval=false, title='ShortHand', group='Previous Daily Levels', inline='2')
 
-var is_8EMA_enabled = input.bool(defval=true, title='8 EMA', group='Daily Moving Average Levels', inline='1')
-var is_21EMA_enabled = input.bool(defval=true, title='21 EMA', group='Daily Moving Average Levels', inline='1')
-var is_50SMA_enabled = input.bool(defval=true, title='50 SMA', group='Daily Moving Average Levels', inline='1')
-var is_100SMA_enabled = input.bool(defval=true, title='100 SMA', group='Daily Moving Average Levels', inline='1')
-var is_200SMA_enabled = input.bool(defval=true, title='200 SMA', group='Daily Moving Average Levels', inline='1')
-var maTextType = input.bool(defval=false, title='ShortHand', group='Daily Moving Average Levels', inline='2')
+var maTextType  = input.bool( title='Use ShortHand for Moving Averages', defval=false,   group='Moving Average Levels', inline='1')
+MA_8EMA_Color   = input.color(title=  '8 EMA', defval=#ffeb3b, group='Moving Average Levels', inline='2')
+MA_21EMA_Color  = input.color(title= '21 EMA', defval=#00bcd4, group='Moving Average Levels', inline='3')
+MA_50SMA_Color  = input.color(title= '50 SMA', defval=#4caf50, group='Moving Average Levels', inline='4')
+MA_100SMA_Color = input.color(title='100 SMA', defval=#ff9800, group='Moving Average Levels', inline='5')
+MA_200SMA_Color = input.color(title='200 SMA', defval=#f23645, group='Moving Average Levels', inline='6')
+
+var is_8EMA_2Min_enabled    = input.bool(defval=false, title='2 Min',  group='Moving Average Levels', inline='2')
+var is_8EMA_5Min_enabled    = input.bool(defval=true,  title='5 Min',  group='Moving Average Levels', inline='2')
+var is_8EMA_1Hour_enabled   = input.bool(defval=true,  title='Hourly', group='Moving Average Levels', inline='2')
+var is_8EMA_1Day_enabled    = input.bool(defval=true,  title='Daily',  group='Moving Average Levels', inline='2')
+
+var is_21EMA_2Min_enabled   = input.bool(defval=false, title='2 Min',  group='Moving Average Levels', inline='3')
+var is_21EMA_5Min_enabled   = input.bool(defval=true,  title='5 Min',  group='Moving Average Levels', inline='3')
+var is_21EMA_1Hour_enabled  = input.bool(defval=true,  title='Hourly', group='Moving Average Levels', inline='3')
+var is_21EMA_1Day_enabled   = input.bool(defval=true,  title='Daily',  group='Moving Average Levels', inline='3')
+
+var is_50SMA_2Min_enabled   = input.bool(defval=false, title='2 Min',  group='Moving Average Levels', inline='4')
+var is_50SMA_5Min_enabled   = input.bool(defval=false, title='5 Min',  group='Moving Average Levels', inline='4')
+var is_50SMA_1Hour_enabled  = input.bool(defval=true,  title='Hourly', group='Moving Average Levels', inline='4')
+var is_50SMA_1Day_enabled   = input.bool(defval=true,  title='Daily',  group='Moving Average Levels', inline='4')
+
+var is_100SMA_2Min_enabled  = input.bool(defval=false, title='2 Min',  group='Moving Average Levels', inline='5')
+var is_100SMA_5Min_enabled  = input.bool(defval=false, title='5 Min',  group='Moving Average Levels', inline='5')
+var is_100SMA_1Hour_enabled = input.bool(defval=true,  title='Hourly', group='Moving Average Levels', inline='5')
+var is_100SMA_1Day_enabled  = input.bool(defval=true,  title='Daily',  group='Moving Average Levels', inline='5')
+
+var is_200SMA_2Min_enabled  = input.bool(defval=false, title='2 Min',  group='Moving Average Levels', inline='6')
+var is_200SMA_5Min_enabled  = input.bool(defval=false, title='5 Min',  group='Moving Average Levels', inline='6')
+var is_200SMA_1Hour_enabled = input.bool(defval=true,  title='Hourly', group='Moving Average Levels', inline='6')
+var is_200SMA_1Day_enabled  = input.bool(defval=true,  title='Daily',  group='Moving Average Levels', inline='6')
 
 var is_ORB_enabled = input.bool(defval=true, title='High/Low', group='Opening Range Break', inline='1')
 var ORBSession = input.session("0930-0945", title='Session Time',group='Opening Range Break', inline='1',tooltip= 'Highest timeframe you can view ORB is 2 hours') 
@@ -63,14 +93,13 @@ var is_YesMonthHigh_enabled = input.bool(defval=true, title='L. Month High', gro
 var is_YesMonthLow_enabled = input.bool(defval=true, title='L. Month Low', group='Last Month Levels', inline='1')
 MonthlyTextType = input.bool(defval=false, title='ShortHand', group='Last Month Levels', inline='2')
 
-//------------------------------ Global Variables--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-PreMarketColor = input.color(title='', defval=#5d606b, group='Premarket Levels', inline='2')
-DailyColor = input.color(title='', defval=#08bcd4, group='Today Daily Levels', inline='2')
-YesterdayDailyColor = input.color(title='', defval=#ffe0b2, group='Yesterday Daily Levels', inline='2')
-PreviousDailyColor = input.color(title='', defval=#f23645, group='Previous Daily Levels', inline='2')
-MADailyColor = input.color(title='', defval=#ffffff, group='Daily Moving Average Levels', inline='2')
-LastWeekColor = input.color(title='', defval=#d40886, group='Last Week Levels', inline='2')
-LastMonthColor = input.color(title='', defval=#b208d4, group='Last Month Levels', inline='2')
+//------------------------------ Color Inputs -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+var PreMarketColor = input.color(title='', defval=#5d606b, group='Premarket Levels', inline='2')
+var DailyColor = input.color(title='', defval=#08bcd4, group='Today Daily Levels', inline='2')
+var YesterdayDailyColor = input.color(title='', defval=#ffe0b2, group='Yesterday Daily Levels', inline='2')
+var PreviousDailyColor = input.color(title='', defval=#f23645, group='Previous Daily Levels', inline='2')
+var LastWeekColor = input.color(title='', defval=#d40886, group='Last Week Levels', inline='2')
+var LastMonthColor = input.color(title='', defval=#b208d4, group='Last Month Levels', inline='2')
  //------------------------------ Days of Weeks----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 f_get_day(whichday) =>
     switch dayofweek(request.security(syminfo.tickerid, 'D', time_close[whichday],lookahead=barmerge.lookahead_off))
@@ -120,11 +149,29 @@ var premltext = GlobalTextType or PremarketTextType ?  'PML' : 'PreM. Low'
 //var pdCtext = GlobalTextType or PrevDailyTextType ?    'PC' : f_get_day(2) + ' Close'
 //var pdotext = GlobalTextType or PrevDailyTextType ?    'PO' : f_get_day(2) + ' Open'
 
-var ema8Text   = GlobalTextType or maTextType?         '8 ema' : '8 EMA'  
-var ema21Text  = GlobalTextType or maTextType ?        '21 ema' : '21 EMA'
-var sma50Text  = GlobalTextType or maTextType ?        '50 sma' : '50 SMA'
-var sma100Text  = GlobalTextType or maTextType ?        '100 sma' :'100 SMA'
-var sma200text = GlobalTextType or maTextType ?        '200 sma' : '200 SMA'
+var ema8_2Min_Text   = GlobalTextType or maTextType ?  '8ma(2)' : '8 EMA (2 Min)'  
+var ema21_2Min_Text  = GlobalTextType or maTextType ?  '21ma(2)' : '21 EMA (2 Min)'
+var sma50_2Min_Text  = GlobalTextType or maTextType ?  '50ma(2)' : '50 SMA (2 Min)'
+var sma100_2Min_Text = GlobalTextType or maTextType ?  '100ma(2)' :'100 SMA (2 Min)'
+var sma200_2Min_Text = GlobalTextType or maTextType ?  '200ma(2)' : '200 SMA (2 Min)'
+
+var ema8_5Min_Text   = GlobalTextType or maTextType ?  '8ma(5)' : '8 EMA (5 Min)'  
+var ema21_5Min_Text  = GlobalTextType or maTextType ?  '21ma(5)' : '21 EMA (5 Min)'
+var sma50_5Min_Text  = GlobalTextType or maTextType ?  '50ma(5)' : '50 SMA (5 Min)'
+var sma100_5Min_Text = GlobalTextType or maTextType ?  '100ma(5)' :'100 SMA (5 Min)'
+var sma200_5Min_Text = GlobalTextType or maTextType ?  '200ma(5)' : '200 SMA (5 Min)'
+
+var ema8_1Hour_Text   = GlobalTextType or maTextType ? '8ma(h)' : '8 EMA (Hourly)'  
+var ema21_1Hour_Text  = GlobalTextType or maTextType ? '21ma(h)' : '21 EMA (Hourly)'
+var sma50_1Hour_Text  = GlobalTextType or maTextType ? '50ma(h)' : '50 SMA (Hourly)'
+var sma100_1Hour_Text = GlobalTextType or maTextType ? '100ma(h)' :'100 SMA (Hourly)'
+var sma200_1Hour_Text = GlobalTextType or maTextType ? '200ma(h)' : '200 SMA (Hourly)'
+
+var ema8_1Day_Text   = GlobalTextType or maTextType ? '8ma(d)' : '8 EMA (Daily)'  
+var ema21_1Day_Text  = GlobalTextType or maTextType ? '21ma(d)' : '21 EMA (Daily)'
+var sma50_1Day_Text  = GlobalTextType or maTextType ? '50ma(d)' : '50 SMA (Daily)'
+var sma100_1Day_Text = GlobalTextType or maTextType ? '100ma(d)' :'100 SMA (Daily)'
+var sma200_1Day_Text = GlobalTextType or maTextType ? '200ma(d)' : '200 SMA (Daily)'
 
 var ywhtext = GlobalTextType or YesweeklyTextType ?   'LWH' : 'LWeek High'
 var ywltext = GlobalTextType or YesweeklyTextType ?   'LWL' : 'LWeek Low'
@@ -141,13 +188,17 @@ var ORBHText = GlobalTextType or ORBTextType ?   '' : 'ORB High'
 var ORBLText = GlobalTextType or ORBTextType ?   '' : 'ORB Low'
 
 if globalcoloring == true
-    PreMarketColor := GlobalColor
-    DailyColor := GlobalColor
+    PreMarketColor      := GlobalColor
+    DailyColor          := GlobalColor
     YesterdayDailyColor := GlobalColor
-    PreviousDailyColor := GlobalColor
-    MADailyColor := GlobalColor
-    LastWeekColor := GlobalColor
-    LastMonthColor := GlobalColor
+    PreviousDailyColor  := GlobalColor
+    LastWeekColor       := GlobalColor
+    LastMonthColor      := GlobalColor
+    MA_8EMA_Color       := GlobalColor
+    MA_21EMA_Color      := GlobalColor
+    MA_50SMA_Color      := GlobalColor
+    MA_100SMA_Color     := GlobalColor
+    MA_200SMA_Color     := GlobalColor
 
 linewidthint = 1
 if linesize == 'Small'
@@ -283,7 +334,7 @@ if barstate.islast
         label.set_text(premarkethigh_label, premhtext)
         f_LevelMerge(pricearray, labelarray, pm_high, premarkethigh_label, PreMarketColor)
         
-//Pre MARKET LOW/MA_Time
+//Pre MARKET LOW
     if is_premarketrangelow_enabled
         var premarkethigl_line = line.new(x1  = PreMarketHours[1], y1    = pm_low, x2    = limit_right, y2    = pm_low,  color = PreMarketColor, width=DEFAULT_LINE_WIDTH,xloc  = xloc.bar_time, style=linestyles)        
         var premarkethigl_label = label.new(x=limit_right,y=pm_low, text=premltext,color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=PreMarketColor,size=DEFAULT_LABEL_SIZE,xloc=xloc.bar_time)
@@ -400,50 +451,189 @@ if barstate.islast
         label.set_text(prevdailyC_label, GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'C' :  f_get_day(2) + ' Close')
         f_LevelMerge(pricearray, labelarray, Previous_Close, prevdailyC_label, PreviousDailyColor)
 
-//8 EMA
-    if is_8EMA_enabled
-        var ema8lne = line.new(MA_Time, ema8_price, limit_right, ema8_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
-        var ema8lbl = label.new(x=limit_right, y=ema8_price, text=ema8Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
-        line.set_xy1  (ema8lne, MA_Time,ema8_price)   
-        line.set_xy2  (ema8lne,limit_right , ema8_price) 
-        label.set_text(ema8lbl, ema8Text)
-        f_LevelMerge(pricearray, labelarray, ema8_price, ema8lbl, MADailyColor)
+// EMA Lines (2 Minute) ---------------------------------------------------------------------------------------------------
+//8 EMA (2 Minute)
+    if is_8EMA_2Min_enabled
+        var ema8_2Min_lne = line.new(MA_2Min_Time, ema8_2Min_price, limit_right, ema8_2Min_price,  color = MA_8EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema8_2Min_lbl = label.new(x=limit_right, y=ema8_2Min_price, text=ema8_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_8EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema8_2Min_lne, MA_2Min_Time,ema8_2Min_price)   
+        line.set_xy2  (ema8_2Min_lne,limit_right , ema8_2Min_price) 
+        label.set_text(ema8_2Min_lbl, ema8_2Min_Text)
+        f_LevelMerge(pricearray, labelarray, ema8_2Min_price, ema8_2Min_lbl, MA_8EMA_Color)
 
-//21 EMA
-    if is_21EMA_enabled
-        var ema21lne = line.new(MA_Time, ema21_price,limit_right, ema21_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
-        var ema21lbl = label.new(x=limit_right, y=ema21_price, text=ema21Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
-        line.set_xy1  (ema21lne, MA_Time,ema21_price)   
-        line.set_xy2  (ema21lne,limit_right , ema21_price) 
-        label.set_text(ema21lbl, ema21Text)
-        f_LevelMerge(pricearray, labelarray, ema21_price, ema21lbl, MADailyColor)
+//21 EMA (2 Minute)
+    if is_21EMA_2Min_enabled
+        var ema21_2Min_lne = line.new(MA_2Min_Time, ema21_2Min_price,limit_right, ema21_2Min_price,  color = MA_21EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema21_2Min_lbl = label.new(x=limit_right, y=ema21_2Min_price, text=ema21_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_21EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema21_2Min_lne, MA_2Min_Time,ema21_2Min_price)   
+        line.set_xy2  (ema21_2Min_lne,limit_right , ema21_2Min_price) 
+        label.set_text(ema21_2Min_lbl, ema21_2Min_Text)
+        f_LevelMerge(pricearray, labelarray, ema21_2Min_price, ema21_2Min_lbl, MA_21EMA_Color)
 
-//50 SMA
-    if is_50SMA_enabled
-        var sma50lne = line.new(MA_Time, sma50_price,limit_right, sma50_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
-        var sma50lbl = label.new(x=limit_right, y=sma50_price, text=sma50Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
-        line.set_xy1  (sma50lne, MA_Time,sma50_price)   
-        line.set_xy2  (sma50lne,limit_right , sma50_price) 
-        label.set_text(sma50lbl, sma50Text)
-        f_LevelMerge(pricearray, labelarray, sma50_price, sma50lbl, MADailyColor)
+//50 SMA (2 Minute)
+    if is_50SMA_2Min_enabled
+        var sma50_2Min_lne = line.new(MA_2Min_Time, sma50_2Min_price,limit_right, sma50_2Min_price,  color = MA_50SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma50_2Min_lbl = label.new(x=limit_right, y=sma50_2Min_price, text=sma50_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_50SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma50_2Min_lne, MA_2Min_Time,sma50_2Min_price)   
+        line.set_xy2  (sma50_2Min_lne,limit_right , sma50_2Min_price) 
+        label.set_text(sma50_2Min_lbl, sma50_2Min_Text)
+        f_LevelMerge(pricearray, labelarray, sma50_2Min_price, sma50_2Min_lbl, MA_50SMA_Color)
 
-//100 SMA
-    if is_100SMA_enabled
-        var sma100lne = line.new(MA_Time, sma100_price,limit_right, sma100_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
-        var sma100lbl = label.new(x=limit_right, y=sma100_price, text=sma100Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
-        line.set_xy1(sma100lne, MA_Time,sma100_price)   
-        line.set_xy2  (sma100lne,limit_right , sma100_price) 
-        label.set_text(sma100lbl, sma100Text)
-        f_LevelMerge(pricearray, labelarray, sma100_price, sma100lbl, MADailyColor)
+//100 SMA (2 Minute)
+    if is_100SMA_2Min_enabled
+        var sma100_2Min_lne = line.new(MA_2Min_Time, sma100_2Min_price,limit_right, sma100_2Min_price,  color = MA_100SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma100_2Min_lbl = label.new(x=limit_right, y=sma100_2Min_price, text=sma100_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_100SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1(sma100_2Min_lne, MA_2Min_Time,sma100_2Min_price)   
+        line.set_xy2  (sma100_2Min_lne,limit_right , sma100_2Min_price) 
+        label.set_text(sma100_2Min_lbl, sma100_2Min_Text)
+        f_LevelMerge(pricearray, labelarray, sma100_2Min_price, sma100_2Min_lbl, MA_100SMA_Color)
 
-//200 SMA
-    if is_200SMA_enabled
-        var sma200lne = line.new(MA_Time, sma200_price,limit_right, sma200_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
-        var sma200lbl = label.new(x=limit_right, y=sma200_price, text=sma200text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
-        line.set_xy1  (sma200lne, MA_Time,sma200_price)   
-        line.set_xy2  (sma200lne,limit_right , sma200_price) 
-        label.set_text(sma200lbl, sma200text)
-        f_LevelMerge(pricearray, labelarray, sma200_price, sma200lbl, MADailyColor)
+//200 SMA (2 Minute)
+    if is_200SMA_2Min_enabled
+        var sma200_2Min_lne = line.new(MA_2Min_Time, sma200_2Min_price,limit_right, sma200_2Min_price,  color = MA_200SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma200_2Min_lbl = label.new(x=limit_right, y=sma200_2Min_price, text=sma200_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MA_200SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma200_2Min_lne, MA_2Min_Time,sma200_2Min_price)   
+        line.set_xy2  (sma200_2Min_lne,limit_right , sma200_2Min_price) 
+        label.set_text(sma200_2Min_lbl, sma200_2Min_Text)
+        f_LevelMerge(pricearray, labelarray, sma200_2Min_price, sma200_2Min_lbl, MA_200SMA_Color)
+
+// EMA Lines (5 Minute) ---------------------------------------------------------------------------------------------------
+//8 EMA (5 Minute)
+    if is_8EMA_5Min_enabled
+        var ema8_5Min_lne = line.new(MA_5Min_Time, ema8_5Min_price, limit_right, ema8_5Min_price,  color = MA_8EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema8_5Min_lbl = label.new(x=limit_right, y=ema8_5Min_price, text=ema8_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_8EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema8_5Min_lne, MA_5Min_Time,ema8_5Min_price)   
+        line.set_xy2  (ema8_5Min_lne,limit_right , ema8_5Min_price) 
+        label.set_text(ema8_5Min_lbl, ema8_5Min_Text)
+        f_LevelMerge(pricearray, labelarray, ema8_5Min_price, ema8_5Min_lbl, MA_8EMA_Color)
+
+//21 EMA (5 Minute)
+    if is_21EMA_5Min_enabled
+        var ema21_5Min_lne = line.new(MA_5Min_Time, ema21_5Min_price,limit_right, ema21_5Min_price,  color = MA_21EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema21_5Min_lbl = label.new(x=limit_right, y=ema21_5Min_price, text=ema21_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_21EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema21_5Min_lne, MA_5Min_Time,ema21_5Min_price)   
+        line.set_xy2  (ema21_5Min_lne,limit_right , ema21_5Min_price) 
+        label.set_text(ema21_5Min_lbl, ema21_5Min_Text)
+        f_LevelMerge(pricearray, labelarray, ema21_5Min_price, ema21_5Min_lbl, MA_21EMA_Color)
+
+//50 SMA (5 Minute)
+    if is_50SMA_5Min_enabled
+        var sma50_5Min_lne = line.new(MA_5Min_Time, sma50_5Min_price,limit_right, sma50_5Min_price,  color = MA_50SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma50_5Min_lbl = label.new(x=limit_right, y=sma50_5Min_price, text=sma50_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_50SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma50_5Min_lne, MA_5Min_Time,sma50_5Min_price)   
+        line.set_xy2  (sma50_5Min_lne,limit_right , sma50_5Min_price) 
+        label.set_text(sma50_5Min_lbl, sma50_5Min_Text)
+        f_LevelMerge(pricearray, labelarray, sma50_5Min_price, sma50_5Min_lbl, MA_50SMA_Color)
+
+//100 SMA (5 Minute)
+    if is_100SMA_5Min_enabled
+        var sma100_5Min_lne = line.new(MA_5Min_Time, sma100_5Min_price,limit_right, sma100_5Min_price,  color = MA_100SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma100_5Min_lbl = label.new(x=limit_right, y=sma100_5Min_price, text=sma100_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_100SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1(sma100_5Min_lne, MA_5Min_Time,sma100_5Min_price)   
+        line.set_xy2  (sma100_5Min_lne,limit_right , sma100_5Min_price) 
+        label.set_text(sma100_5Min_lbl, sma100_5Min_Text)
+        f_LevelMerge(pricearray, labelarray, sma100_5Min_price, sma100_5Min_lbl, MA_100SMA_Color)
+
+//200 SMA (5 Minute)
+    if is_200SMA_5Min_enabled
+        var sma200_5Min_lne = line.new(MA_5Min_Time, sma200_5Min_price,limit_right, sma200_5Min_price,  color = MA_200SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma200_5Min_lbl = label.new(x=limit_right, y=sma200_5Min_price, text=sma200_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MA_200SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma200_5Min_lne, MA_5Min_Time,sma200_5Min_price)   
+        line.set_xy2  (sma200_5Min_lne,limit_right , sma200_5Min_price) 
+        label.set_text(sma200_5Min_lbl, sma200_5Min_Text)
+        f_LevelMerge(pricearray, labelarray, sma200_5Min_price, sma200_5Min_lbl, MA_200SMA_Color)
+
+// EMA Lines (Hourly) ---------------------------------------------------------------------------------------------------
+//8 EMA (Hourly)
+    if is_8EMA_1Hour_enabled
+        var ema8_1Hour_lne = line.new(MA_1Hour_Time, ema8_1Hour_price, limit_right, ema8_1Hour_price,  color = MA_8EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema8_1Hour_lbl = label.new(x=limit_right, y=ema8_1Hour_price, text=ema8_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_8EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema8_1Hour_lne, MA_1Hour_Time,ema8_1Hour_price)   
+        line.set_xy2  (ema8_1Hour_lne,limit_right , ema8_1Hour_price) 
+        label.set_text(ema8_1Hour_lbl, ema8_1Hour_Text)
+        f_LevelMerge(pricearray, labelarray, ema8_1Hour_price, ema8_1Hour_lbl, MA_8EMA_Color)
+
+//21 EMA (Hourly)
+    if is_21EMA_1Hour_enabled
+        var ema21_1Hour_lne = line.new(MA_1Hour_Time, ema21_1Hour_price,limit_right, ema21_1Hour_price,  color = MA_21EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema21_1Hour_lbl = label.new(x=limit_right, y=ema21_1Hour_price, text=ema21_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_21EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema21_1Hour_lne, MA_1Hour_Time,ema21_1Hour_price)   
+        line.set_xy2  (ema21_1Hour_lne,limit_right , ema21_1Hour_price) 
+        label.set_text(ema21_1Hour_lbl, ema21_1Hour_Text)
+        f_LevelMerge(pricearray, labelarray, ema21_1Hour_price, ema21_1Hour_lbl, MA_21EMA_Color)
+
+//50 SMA (Hourly)
+    if is_50SMA_1Hour_enabled
+        var sma50_1Hour_lne = line.new(MA_1Hour_Time, sma50_1Hour_price,limit_right, sma50_1Hour_price,  color = MA_50SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma50_1Hour_lbl = label.new(x=limit_right, y=sma50_1Hour_price, text=sma50_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_50SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma50_1Hour_lne, MA_1Hour_Time,sma50_1Hour_price)   
+        line.set_xy2  (sma50_1Hour_lne,limit_right , sma50_1Hour_price) 
+        label.set_text(sma50_1Hour_lbl, sma50_1Hour_Text)
+        f_LevelMerge(pricearray, labelarray, sma50_1Hour_price, sma50_1Hour_lbl, MA_50SMA_Color)
+
+//100 SMA (Hourly)
+    if is_100SMA_1Hour_enabled
+        var sma100_1Hour_lne = line.new(MA_1Hour_Time, sma100_1Hour_price,limit_right, sma100_1Hour_price,  color = MA_100SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma100_1Hour_lbl = label.new(x=limit_right, y=sma100_1Hour_price, text=sma100_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_100SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1(sma100_1Hour_lne, MA_1Hour_Time,sma100_1Hour_price)   
+        line.set_xy2  (sma100_1Hour_lne,limit_right , sma100_1Hour_price) 
+        label.set_text(sma100_1Hour_lbl, sma100_1Hour_Text)
+        f_LevelMerge(pricearray, labelarray, sma100_1Hour_price, sma100_1Hour_lbl, MA_100SMA_Color)
+
+//200 SMA (Hourly)
+    if is_200SMA_1Hour_enabled
+        var sma200_1Hour_lne = line.new(MA_1Hour_Time, sma200_1Hour_price,limit_right, sma200_1Hour_price,  color = MA_200SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma200_1Hour_lbl = label.new(x=limit_right, y=sma200_1Hour_price, text=sma200_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MA_200SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma200_1Hour_lne, MA_1Hour_Time,sma200_1Hour_price)   
+        line.set_xy2  (sma200_1Hour_lne,limit_right , sma200_1Hour_price) 
+        label.set_text(sma200_1Hour_lbl, sma200_1Hour_Text)
+        f_LevelMerge(pricearray, labelarray, sma200_1Hour_price, sma200_1Hour_lbl, MA_200SMA_Color)
+
+// EMA Lines (Daily) ---------------------------------------------------------------------------------------------------
+//8 EMA (Daily)
+    if is_8EMA_1Day_enabled
+        var ema8_1Day_lne = line.new(MA_1Day_Time, ema8_1Day_price, limit_right, ema8_1Day_price,  color = MA_8EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema8_1Day_lbl = label.new(x=limit_right, y=ema8_1Day_price, text=ema8_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_8EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema8_1Day_lne, MA_1Day_Time,ema8_1Day_price)   
+        line.set_xy2  (ema8_1Day_lne,limit_right , ema8_1Day_price) 
+        label.set_text(ema8_1Day_lbl, ema8_1Day_Text)
+        f_LevelMerge(pricearray, labelarray, ema8_1Day_price, ema8_1Day_lbl, MA_8EMA_Color)
+
+//21 EMA (Daily)
+    if is_21EMA_1Day_enabled
+        var ema21_1Day_lne = line.new(MA_1Day_Time, ema21_1Day_price,limit_right, ema21_1Day_price,  color = MA_21EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema21_1Day_lbl = label.new(x=limit_right, y=ema21_1Day_price, text=ema21_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_21EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema21_1Day_lne, MA_1Day_Time,ema21_1Day_price)   
+        line.set_xy2  (ema21_1Day_lne,limit_right , ema21_1Day_price) 
+        label.set_text(ema21_1Day_lbl, ema21_1Day_Text)
+        f_LevelMerge(pricearray, labelarray, ema21_1Day_price, ema21_1Day_lbl, MA_21EMA_Color)
+
+//50 SMA (Daily)
+    if is_50SMA_1Day_enabled
+        var sma50_1Day_lne = line.new(MA_1Day_Time, sma50_1Day_price,limit_right, sma50_1Day_price,  color = MA_50SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma50_1Day_lbl = label.new(x=limit_right, y=sma50_1Day_price, text=sma50_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_50SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma50_1Day_lne, MA_1Day_Time,sma50_1Day_price)   
+        line.set_xy2  (sma50_1Day_lne,limit_right , sma50_1Day_price) 
+        label.set_text(sma50_1Day_lbl, sma50_1Day_Text)
+        f_LevelMerge(pricearray, labelarray, sma50_1Day_price, sma50_1Day_lbl, MA_50SMA_Color)
+
+//100 SMA (Daily)
+    if is_100SMA_1Day_enabled
+        var sma100_1Day_lne = line.new(MA_1Day_Time, sma100_1Day_price,limit_right, sma100_1Day_price,  color = MA_100SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma100_1Day_lbl = label.new(x=limit_right, y=sma100_1Day_price, text=sma100_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_100SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1(sma100_1Day_lne, MA_1Day_Time,sma100_1Day_price)   
+        line.set_xy2  (sma100_1Day_lne,limit_right , sma100_1Day_price) 
+        label.set_text(sma100_1Day_lbl, sma100_1Day_Text)
+        f_LevelMerge(pricearray, labelarray, sma100_1Day_price, sma100_1Day_lbl, MA_100SMA_Color)
+
+//200 SMA (Daily)
+    if is_200SMA_1Day_enabled
+        var sma200_1Day_lne = line.new(MA_1Day_Time, sma200_1Day_price,limit_right, sma200_1Day_price,  color = MA_200SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma200_1Day_lbl = label.new(x=limit_right, y=sma200_1Day_price, text=sma200_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MA_200SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma200_1Day_lne, MA_1Day_Time,sma200_1Day_price)   
+        line.set_xy2  (sma200_1Day_lne,limit_right , sma200_1Day_price) 
+        label.set_text(sma200_1Day_lbl, sma200_1Day_Text)
+        f_LevelMerge(pricearray, labelarray, sma200_1Day_price, sma200_1Day_lbl, MA_200SMA_Color)
 
 //Last Week HIGH 
     if is_YesweeklyHigh_enabled
@@ -518,10 +708,10 @@ if barstate.islast
         f_LevelMerge(pricearray, labelarray, LastMonth_Close, lastmonthC_label, LastMonthColor)
 
 //Alert calculations
-ema8cross = ta.crossover(close, ema8_price) or ta.crossunder(close, ema8_price)
-ema21cross = ta.crossover(close,  ema21_price) or ta.crossunder(close, ema21_price)
-sma50cross = ta.crossover(close, sma50_price) or ta.crossunder(close, sma50_price)
-sma200cross = ta.crossover(close, sma200_price) or ta.crossunder(close, sma200_price)
+ema8cross = ta.crossover(close, ema8_1Day_price) or ta.crossunder(close, ema8_1Day_price)
+ema21cross = ta.crossover(close,  ema21_1Day_price) or ta.crossunder(close, ema21_1Day_price)
+sma50cross = ta.crossover(close, sma50_1Day_price) or ta.crossunder(close, sma50_1Day_price)
+sma200cross = ta.crossover(close, sma200_1Day_price) or ta.crossunder(close, sma200_1Day_price)
 calc_on_every_tick=true
 if ema8cross 
     alert("Crossing 8 EMA at $" + str.tostring (close) , alert.freq_once_per_bar)
