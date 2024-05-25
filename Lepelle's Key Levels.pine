@@ -1,0 +1,575 @@
+//@version=5
+indicator("Lepelle's Key Levels", shorttitle='Lepelle Key Levels', overlay=true, max_lines_count=100)
+//------------------------------ Global Inputs ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+linesize = input.string(defval='Small', title='Line Width', options=['Small', 'Medium', 'Large'], inline='Global Line',group='Global Settings')
+linestyle = input.string(defval='Solid', title='Line Style', options=['Solid', 'Dashed', 'Dotted'], inline='Global Line',group='Global Settings')
+labelsize = input.string(defval='Small', title='   Text Size', options=['Small', 'Medium', 'Large'], inline='Global Line',group='Global Settings')
+distanceright = input.int(defval=1, title='Distance', minval=1, maxval=100,inline='Global Line',group='Global Settings',tooltip='Label distance from candlesticks, max 100. During Market Close, Distance does not work.')
+labelpos = input.string(defval='Top', title='Label Position', options=['Top', 'Right'], inline='Global Line',group='Global Settings')
+HidePrice = input.bool(defval=false, title='Hide Prices', inline='Global Line 2',group='Global Settings',tooltip='Hide Price on Levels')
+GlobalTextType = input.bool(defval=false, title='Global Shorthand', tooltip='Abb. Labels',inline='Global Line 2',group='Global Settings')
+globalcoloring = input.bool(defval=false, title='Global Coloring', tooltip='Same color for all level', inline='Global Coloring',group='Global Settings')
+GlobalColor = input.color(title='', defval=color.white, inline='Global Coloring',group='Global Settings')
+//------------------------------ Time Frames-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[Today_Time, Today_High, Today_Low, Today_Open, Today_Close] = request.security(syminfo.tickerid, 'D', [time, high, low, open, close], lookahead=barmerge.lookahead_on)
+[Yesterday_Time, Yesterday_High, Yesterday_Low, Yesterday_Open, Yesterday_Close] = request.security(syminfo.tickerid, 'D', [time[1], high[1],low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
+[Previous_Time, Previous_High, Previous_Low, Previous_Open, Previous_Close] = request.security(syminfo.tickerid, 'D', [time[2], high[2],low[2], open[2], close[2]], lookahead=barmerge.lookahead_on)
+[MA_Time, ema8_price,ema21_price,sma50_price,sma100_price, sma200_price] = request.security(syminfo.tickerid, 'D', [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
+[LastWeek_Time, LastWeek_High, LastWeek_Low, LastWeek_Open, LastWeek_Close] = request.security(syminfo.tickerid, 'W', [time[1], high[1],low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
+[LastMonth_Time, LastMonth_High, LastMonth_Low, LastMonth_Open, LastMonth_Close] = request.security(syminfo.tickerid, 'M', [time[1], high[1], low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
+//------------------------------ Local Inputs ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+var is_premarketrangehigh_enabled = input.bool(defval=true, title='Premarket High', group='Premarket Levels', inline='1')
+var is_premarketrangelow_enabled = input.bool(defval=true, title='Premarket Low ', group='Premarket Levels', inline='1')
+PremarketTextType = input.bool(defval=false, title='ShortHand', group='Premarket Levels', inline='2', tooltip='Futures / Crypto markets do not have a premarket.')
+
+var is_dailyOpen_enabled = input.bool(defval=true, title='Today Open', group='Today Daily Levels', inline='1')
+var is_dailyClose_enabled = input.bool(defval=false, title='Today Close', group='Today Daily Levels', inline='1')
+var is_dailyHigh_enabled = input.bool(defval=true, title='Today High', group='Today Daily Levels', inline='1')
+var is_dailyLow_enabled = input.bool(defval=true, title='Today Low', group='Today Daily Levels', inline='1')
+var DailyTextType = input.bool(defval=false, title='ShortHand', group='Today Daily Levels', inline='2')
+
+var is_YesdailyOpen_enabled = input.bool(defval=true, title='Yesterday Open', group='Yesterday Daily Levels', inline='1')
+var is_YesdailyClose_enabled = input.bool(defval=true, title='Yesterday Close', group='Yesterday Daily Levels', inline='1')
+var is_YesdailyHigh_enabled = input.bool(defval=true, title='Yesterday High', group='Yesterday Daily Levels', inline='1')
+var is_YesdailyLow_enabled = input.bool(defval=true, title='Yest. Low', group='Yesterday Daily Levels', inline='1')
+var YesDailyTextType = input.bool(defval=false, title='ShortHand', group='Yesterday Daily Levels', inline='2')
+
+var is_PrevdailyOpen_enabled = input.bool(defval=true, title='Previous Open', group='Previous Daily Levels', inline='1')
+var is_PrevdailyClose_enabled = input.bool(defval=true, title='Previous Close', group='Previous Daily Levels', inline='1')
+var is_PrevdailyHigh_enabled = input.bool(defval=true, title='Previous High', group='Previous Daily Levels', inline='1')
+var is_PrevdailyLow_enabled = input.bool(defval=true, title='Previous Low', group='Previous Daily Levels', inline='1')
+var PrevDailyTextType = input.bool(defval=false, title='ShortHand', group='Previous Daily Levels', inline='2')
+
+var is_8EMA_enabled = input.bool(defval=true, title='8 EMA', group='Daily Moving Average Levels', inline='1')
+var is_21EMA_enabled = input.bool(defval=true, title='21 EMA', group='Daily Moving Average Levels', inline='1')
+var is_50SMA_enabled = input.bool(defval=true, title='50 SMA', group='Daily Moving Average Levels', inline='1')
+var is_100SMA_enabled = input.bool(defval=true, title='100 SMA', group='Daily Moving Average Levels', inline='1')
+var is_200SMA_enabled = input.bool(defval=true, title='200 SMA', group='Daily Moving Average Levels', inline='1')
+var maTextType = input.bool(defval=false, title='ShortHand', group='Daily Moving Average Levels', inline='2')
+
+var is_ORB_enabled = input.bool(defval=true, title='High/Low', group='Opening Range Break', inline='1')
+var ORBSession = input.session("0930-0945", title='Session Time',group='Opening Range Break', inline='1',tooltip= 'Highest timeframe you can view ORB is 2 hours') 
+var ORBTextType = input.bool(defval=true, title='Hide Label', group='Opening Range Break', inline='2')
+
+var is_YesweeklyOpen_enabled = input.bool(defval=false, title='L. Week Open', group='Last Week Levels', inline='1')
+var is_YesweeklyClose_enabled = input.bool(defval=false, title='L. Week Close', group='Last Week Levels', inline='1')
+var is_YesweeklyHigh_enabled = input.bool(defval=true, title='L. Week High', group='Last Week Levels', inline='1')
+var is_YesweeklyLow_enabled = input.bool(defval=true, title='L. Week Low', group='Last Week Levels', inline='1')
+var YesweeklyTextType = input.bool(defval=false, title='ShortHand', group='Last Week Levels', inline='2')
+
+var is_YesMonthOpen_enabled = input.bool(defval=false, title='L. Month Open', group='Last Month Levels', inline='1')
+var is_YesMonthClose_enabled = input.bool(defval=false, title='L. Month Close', group='Last Month Levels', inline='1')
+var is_YesMonthHigh_enabled = input.bool(defval=true, title='L. Month High', group='Last Month Levels', inline='1')
+var is_YesMonthLow_enabled = input.bool(defval=true, title='L. Month Low', group='Last Month Levels', inline='1')
+MonthlyTextType = input.bool(defval=false, title='ShortHand', group='Last Month Levels', inline='2')
+
+//------------------------------ Global Variables--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+PreMarketColor = input.color(title='', defval=#5d606b, group='Premarket Levels', inline='2')
+DailyColor = input.color(title='', defval=#08bcd4, group='Today Daily Levels', inline='2')
+YesterdayDailyColor = input.color(title='', defval=#ffe0b2, group='Yesterday Daily Levels', inline='2')
+PreviousDailyColor = input.color(title='', defval=#f23645, group='Previous Daily Levels', inline='2')
+MADailyColor = input.color(title='', defval=#ffffff, group='Daily Moving Average Levels', inline='2')
+LastWeekColor = input.color(title='', defval=#d40886, group='Last Week Levels', inline='2')
+LastMonthColor = input.color(title='', defval=#b208d4, group='Last Month Levels', inline='2')
+ //------------------------------ Days of Weeks----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+f_get_day(whichday) =>
+    switch dayofweek(request.security(syminfo.tickerid, 'D', time_close[whichday],lookahead=barmerge.lookahead_off))
+        1 => "Sun"
+        2 => "Mon"
+        3 => "Tue"
+        4 => "Wed"
+        5 => "Thu"
+        6 => "Fri"
+        7 => "Sat"
+        => 'na'
+
+f_get_day2(whichday) =>
+    switch dayofweek(request.security(syminfo.tickerid, 'D', time_close[whichday],lookahead=barmerge.lookahead_off))
+        1 => "Su"
+        2 => "Mo"
+        3 => "Tu"
+        4 => "We"
+        5 => "Th"
+        6 => "Fr"
+        7 => "Sa"
+        => 'na'
+
+//var testTable = table.new(position = position.bottom_right, columns = 1, rows = 3, bgcolor = color.yellow, border_width = 1)
+//if barstate.islast
+//table.cell(table_id = testTable, column = 0 , row = 0, text = f_get_day(0))
+//table.cell(table_id = testTable, column = 0, row = 1, text = f_get_day(1))
+//table.cell(table_id = testTable, column = 0, row = 2, text = f_get_day(2))
+
+var premhtext = GlobalTextType or PremarketTextType ?  'PMH' : 'PreM. High'
+var premltext = GlobalTextType or PremarketTextType ?  'PML' : 'PreM. Low'  
+
+//var TDHText = GlobalTextType or DailyTextType ?        'TH' :  f_get_day(0) + ' High'
+//var TDLText = GlobalTextType or DailyTextType ?        'TL' :  f_get_day(0) + ' Low' 
+//var TDOText = GlobalTextType or DailyTextType ?        'TO' :  f_get_day(0) + ' Open'
+//var TDCText = GlobalTextType or DailyTextType ?        'TC' :  f_get_day(0) + ' Close'
+
+//var ydhtext = GlobalTextType or YesDailyTextType ?     'YH' : f_get_day(1) + ' High'
+//var ydltext = GlobalTextType or YesDailyTextType ?     'YL' : f_get_day(1)  + ' Low'
+//var ydOtext = GlobalTextType or YesDailyTextType ?     'YO' : f_get_day(1)  + ' Open'
+//var ydCtext = GlobalTextType or YesDailyTextType ?     'YC' : f_get_day(1) + ' Close'
+//var ydotext = GlobalTextType or YesDailyTextType ?     'YO' : f_get_day(1)  + ' Open'
+
+//var pdhtext = GlobalTextType or PrevDailyTextType ?    'PH' : f_get_day(2) + ' High'
+//var pdltext = GlobalTextType or PrevDailyTextType ?    'PL' : f_get_day(2) + ' Low'
+//var pdOtext = GlobalTextType or PrevDailyTextType ?    'PO' : f_get_day(2) + ' Open'
+//var pdCtext = GlobalTextType or PrevDailyTextType ?    'PC' : f_get_day(2) + ' Close'
+//var pdotext = GlobalTextType or PrevDailyTextType ?    'PO' : f_get_day(2) + ' Open'
+
+var ema8Text   = GlobalTextType or maTextType?         '8 ema' : '8 EMA'  
+var ema21Text  = GlobalTextType or maTextType ?        '21 ema' : '21 EMA'
+var sma50Text  = GlobalTextType or maTextType ?        '50 sma' : '50 SMA'
+var sma100Text  = GlobalTextType or maTextType ?        '100 sma' :'100 SMA'
+var sma200text = GlobalTextType or maTextType ?        '200 sma' : '200 SMA'
+
+var ywhtext = GlobalTextType or YesweeklyTextType ?   'LWH' : 'LWeek High'
+var ywltext = GlobalTextType or YesweeklyTextType ?   'LWL' : 'LWeek Low'
+var ywOtext = GlobalTextType or YesweeklyTextType ?   'LWO' : 'LWeek Open'
+var ywCtext = GlobalTextType or YesweeklyTextType ?   'LWC' : 'LWeek Close'
+
+var ymhtext = GlobalTextType or MonthlyTextType ?      'LMH' : 'LMonth High'
+var ymltext = GlobalTextType or MonthlyTextType ?      'LML' : 'LMonth Low'
+var ymOtext = GlobalTextType or MonthlyTextType ?      'LMO' : 'LMonth Open'
+var ymCtext = GlobalTextType or MonthlyTextType ?      'LMC' : 'LMonth Close'
+
+
+var ORBHText = GlobalTextType or ORBTextType ?   '' : 'ORB High'
+var ORBLText = GlobalTextType or ORBTextType ?   '' : 'ORB Low'
+
+if globalcoloring == true
+    PreMarketColor := GlobalColor
+    DailyColor := GlobalColor
+    YesterdayDailyColor := GlobalColor
+    PreviousDailyColor := GlobalColor
+    MADailyColor := GlobalColor
+    LastWeekColor := GlobalColor
+    LastMonthColor := GlobalColor
+
+linewidthint = 1
+if linesize == 'Small'
+    linewidthint := 1
+    linewidthint
+if linesize == 'Medium'
+    linewidthint := 2
+    linewidthint
+if linesize == 'Large'
+    linewidthint := 3
+    linewidthint
+
+var DEFAULT_LINE_WIDTH = linewidthint
+var DEFAULT_TAIL_WIDTH = linewidthint
+
+fontsize = size.small
+
+if labelsize == 'Small'
+    fontsize := size.small
+    fontsize
+
+if labelsize == 'Medium'
+    fontsize := size.normal
+    fontsize
+
+if labelsize == 'Large'
+    fontsize := size.large
+    fontsize
+
+linestyles = line.style_solid
+if linestyle == 'Dashed'
+    linestyles := line.style_dashed
+    linestyles
+
+if linestyle == 'Dotted'
+    linestyles := line.style_dotted
+    linestyles
+
+var DEFAULT_LABEL_STYLE = label.style_label_left
+
+if labelpos == 'Top'
+    DEFAULT_LABEL_STYLE := label.style_none
+
+if labelpos == 'Bottom'
+    DEFAULT_LABEL_STYLE := label.style_label_left
+
+if labelpos == 'Left'
+    DEFAULT_LABEL_STYLE :=  label.style_label_left
+
+var DEFAULT_LABEL_SIZE = fontsize
+
+
+var DEFAULT_EXTEND_RIGHT = distanceright
+
+//------------------------------------Premarket Calculations------------------------------------------------------------------------------------------------------
+PreMarketHours = time("1440","0000-0930") // 1440 is the number of minutes in a whole day.
+is_first = na(PreMarketHours[1]) and not na(PreMarketHours) or PreMarketHours[1] < PreMarketHours
+ending_hour = 9
+ending_minute = 30
+
+pm_high = float(na)
+pm_low = float(na)
+k = int(na)
+
+if is_first and barstate.isnew and (hour < ending_hour or hour >= 16 or hour == ending_hour and minute < ending_minute)
+    pm_high := high
+    pm_low := low
+    pm_low
+else 
+    pm_high := pm_high[1]
+    pm_low := pm_low[1]
+    pm_low
+
+if high > pm_high and (hour < ending_hour or hour >= 1600 or hour == ending_hour and minute < ending_minute)
+    pm_high := high
+    pm_high
+    
+if low < pm_low and (hour < ending_hour or hour >= 1600 or hour == ending_hour and minute < ending_minute)
+    pm_low := low
+    pm_high
+
+LastOnly = true
+if LastOnly == true
+    k := -9999
+    k
+else
+    k := 0
+    k
+//------------------------------------PLotting--------------------------------------------------------------------------
+var pricearray = array.new_float(0)
+var labelarray = array.new_label(0)
+limit_right = timenow + ((time - time[5]) * DEFAULT_EXTEND_RIGHT) //Price Levels Distance
+
+
+f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =>
+    if array.includes(pricearray, currentprice)
+        whichindex = array.indexof(pricearray, currentprice)
+        labelhold = array.get(labelarray, whichindex)
+        whichtext = label.get_text(labelhold)
+        label.set_text(labelhold, label.get_text(currentlabel)   + ' / ' + whichtext)
+        label.set_xy(labelhold, limit_right , currentprice)
+        label.set_text(currentlabel, '')
+        label.set_textcolor(labelhold, currentcolor)
+        label.set_style(labelhold, DEFAULT_LABEL_STYLE)
+              
+    else  
+        array.push(pricearray, currentprice)
+        array.push(labelarray, currentlabel)
+        
+        if HidePrice ==true 
+            label.set_text(currentlabel,label.get_text(currentlabel)) 
+        else 
+            label.set_text(currentlabel,label.get_text(currentlabel) +' ' + str.tostring (currentprice, '0.00') )
+        label.set_xy(currentlabel, limit_right , currentprice)
+
+
+var can_show_premarket = is_premarketrangelow_enabled and timeframe.isintraday
+var can_show_daily = is_dailyOpen_enabled and timeframe.isintraday
+var can_show_yesdaily = is_YesdailyOpen_enabled  and timeframe.isintraday
+var can_show_prevdaily = is_PrevdailyOpen_enabled and timeframe.isintraday
+
+// reset the levels at the end of last bar
+if barstate.islast
+    pricearray := array.new_float(0)
+    labelarray := array.new_label(0)
+
+//Pre MARKET HIGH
+    if is_premarketrangehigh_enabled
+        var premarkethigh_line = line.new(x1  = PreMarketHours[1], y1    = pm_high, x2    = limit_right, y2    = pm_high,  color = PreMarketColor, width=DEFAULT_LINE_WIDTH,xloc  = xloc.bar_time, style=linestyles)        
+        var premarkethigh_label = label.new(x=limit_right,y=pm_high, text=premhtext,color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=PreMarketColor,size=DEFAULT_LABEL_SIZE ,xloc=xloc.bar_time)
+        line.set_xy1  (premarkethigh_line, PreMarketHours[1],pm_high)     // OBject ID, X, Y co-ordinates
+        line.set_xy2  (premarkethigh_line, limit_right, pm_high)       
+        label.set_text(premarkethigh_label, premhtext)
+        f_LevelMerge(pricearray, labelarray, pm_high, premarkethigh_label, PreMarketColor)
+        
+//Pre MARKET LOW/MA_Time
+    if is_premarketrangelow_enabled
+        var premarkethigl_line = line.new(x1  = PreMarketHours[1], y1    = pm_low, x2    = limit_right, y2    = pm_low,  color = PreMarketColor, width=DEFAULT_LINE_WIDTH,xloc  = xloc.bar_time, style=linestyles)        
+        var premarkethigl_label = label.new(x=limit_right,y=pm_low, text=premltext,color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=PreMarketColor,size=DEFAULT_LABEL_SIZE,xloc=xloc.bar_time)
+        line.set_xy1(premarkethigl_line, PreMarketHours[1], pm_low) // OBject ID, X, Y co-ordinates
+        line.set_xy2(premarkethigl_line, limit_right, pm_low)
+        label.set_text(premarkethigl_label, premltext)
+        f_LevelMerge(pricearray, labelarray, pm_low, premarkethigl_label, PreMarketColor)
+
+//DAILY HIGH
+    if is_dailyHigh_enabled
+        var Today_Line = line.new(x1=Today_Time, x2=limit_right, y1=Today_High, y2=Today_High, color=DailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var Today_Label = label.new(x=limit_right, y=Today_High, text=GlobalTextType or DailyTextType ?f_get_day2(0)+'H' :  f_get_day(0) + ' High', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=DailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (Today_Line, Today_Time,Today_High)   
+        line.set_xy2  (Today_Line,limit_right , Today_High) 
+        label.set_text(Today_Label, GlobalTextType or DailyTextType ? f_get_day2(0)+'H' :  f_get_day(0) + ' High')
+        f_LevelMerge(pricearray, labelarray, Today_High, Today_Label, DailyColor)
+
+//DAILY LOW 
+    if is_dailyLow_enabled
+        var dailyl_line = line.new(x1=Today_Time, x2=limit_right, y1=Today_Low, y2=Today_Low, color=DailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var dailyl_label = label.new(x=limit_right, y=Today_Low, text=GlobalTextType or DailyTextType ?f_get_day2(0)+'L' :  f_get_day(0) + ' Low', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=DailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (dailyl_line, Today_Time,Today_Low)   
+        line.set_xy2  (dailyl_line,limit_right , Today_Low) 
+        label.set_text(dailyl_label, GlobalTextType or DailyTextType ?f_get_day2(0)+'L' :  f_get_day(0) + ' Low')
+        f_LevelMerge(pricearray, labelarray, Today_Low, dailyl_label, DailyColor)
+ 
+//DAILY OPEN
+    if is_dailyOpen_enabled
+        var dailyO_line = line.new(x1=Today_Time, x2=limit_right, y1=Today_Open, y2=Today_Open, color=DailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var dailyO_label = label.new(x=limit_right, y=Today_Open, text=GlobalTextType or DailyTextType ?f_get_day2(0)+'O' :  f_get_day(0) + ' Open', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=DailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (dailyO_line, Today_Time,Today_Open)   
+        line.set_xy2  (dailyO_line,limit_right , Today_Open) 
+        label.set_text(dailyO_label, GlobalTextType or DailyTextType ?f_get_day2(0)+'O' :  f_get_day(0) + ' Open')
+        f_LevelMerge(pricearray, labelarray, Today_Open, dailyO_label, DailyColor)
+
+//DAILY CLOSE
+    if is_dailyClose_enabled
+        var dailyC_line = line.new(x1=Today_Time, x2=limit_right, y1=Today_Close, y2=Today_Close, color=DailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var dailyC_label = label.new(x=limit_right, y=Today_Close, text=GlobalTextType or DailyTextType ?f_get_day2(0)+'C' :  f_get_day(0) + ' Close', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=DailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (dailyC_line, Today_Time,Today_Close)   
+        line.set_xy2  (dailyC_line,limit_right , Today_Close) 
+        label.set_text(dailyC_label, GlobalTextType or DailyTextType ?f_get_day2(0)+'C' :  f_get_day(0) + ' Close')
+        f_LevelMerge(pricearray, labelarray, Today_Close, dailyC_label, DailyColor)
+
+//YESTERDAY DAILY HIGH 
+    if is_YesdailyHigh_enabled
+        var yesdailyh_line = line.new(x1=Yesterday_Time, x2=limit_right, y1=Yesterday_High, y2=Yesterday_High, color=YesterdayDailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesdailyh_label = label.new(x=limit_right, y=Yesterday_High, text=GlobalTextType or YesDailyTextType ?f_get_day2(1)+'H':  f_get_day(1) + ' High',color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=YesterdayDailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesdailyh_line, Yesterday_Time,Yesterday_High)   
+        line.set_xy2  (yesdailyh_line,limit_right , Yesterday_High) 
+        label.set_text(yesdailyh_label, GlobalTextType or YesDailyTextType ?f_get_day2(1)+'H' :  f_get_day(1) + ' High')
+        f_LevelMerge(pricearray, labelarray, Yesterday_High, yesdailyh_label, YesterdayDailyColor)
+
+//YESTERDAY DAILY LOW
+    if is_YesdailyLow_enabled
+        var yesdailyl_line = line.new(x1=Yesterday_Time, x2=limit_right, y1=Yesterday_Low, y2=Yesterday_Low, color=YesterdayDailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesdailyl_label = label.new(x=limit_right, y=Yesterday_Low, text=GlobalTextType or YesDailyTextType ?f_get_day2(1)+'L' :  f_get_day(1) + ' Low', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=YesterdayDailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesdailyl_line, Yesterday_Time,Yesterday_Low)   
+        line.set_xy2  (yesdailyl_line,limit_right , Yesterday_Low) 
+        label.set_text(yesdailyl_label, GlobalTextType or YesDailyTextType ?f_get_day2(1)+'L' :  f_get_day(1) + ' Low')
+        f_LevelMerge(pricearray, labelarray, Yesterday_Low, yesdailyl_label, YesterdayDailyColor)
+
+//YESYERDAY DAILY OPEN 
+    if is_YesdailyOpen_enabled
+        var yesdailyO_line = line.new(x1=Yesterday_Time, x2=limit_right, y1=Yesterday_Open, y2=Yesterday_Open, color=YesterdayDailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesdailyO_label = label.new(x=limit_right, y=Yesterday_Open, text=GlobalTextType or YesDailyTextType ?f_get_day2(1)+'O' :  f_get_day(1) + ' Open', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=YesterdayDailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesdailyO_line, Yesterday_Time,Yesterday_Open)   
+        line.set_xy2  (yesdailyO_line,limit_right , Yesterday_Open) 
+        label.set_text(yesdailyO_label, GlobalTextType or YesDailyTextType ?f_get_day2(1)+'O' :  f_get_day(1) + ' Open')
+        f_LevelMerge(pricearray, labelarray, Yesterday_Open, yesdailyO_label, YesterdayDailyColor)
+
+//YESTERDAY DAILY CLOSE
+    if is_YesdailyClose_enabled
+        var yesdailyC_line = line.new(x1=Yesterday_Time, x2=limit_right, y1=Yesterday_Close, y2=Yesterday_Close, color=YesterdayDailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesdailyC_label = label.new(x=limit_right, y=Yesterday_Close, text=GlobalTextType or YesDailyTextType ?f_get_day2(1)+'C' :  f_get_day(1) + ' Close',color = color(na), style=DEFAULT_LABEL_STYLE, textcolor=YesterdayDailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesdailyC_line, Yesterday_Time,Yesterday_Close)   
+        line.set_xy2  (yesdailyC_line,limit_right , Yesterday_Close) 
+        label.set_text(yesdailyC_label, GlobalTextType or YesDailyTextType ?f_get_day2(1)+'C' :  f_get_day(1) + ' Close')
+        f_LevelMerge(pricearray, labelarray, Yesterday_Close, yesdailyC_label, YesterdayDailyColor)
+
+//PREVIOUS DAILY HIGH
+    if is_PrevdailyHigh_enabled
+        var prevdailyh_line = line.new(x1=Previous_Time, x2=limit_right, y1=Previous_High, y2=Previous_High, color=PreviousDailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var prevdailyh_label = label.new(x=limit_right, y=Previous_High, text=GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'H' :  f_get_day(2) + ' High', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=PreviousDailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (prevdailyh_line, Previous_Time,Previous_High)   
+        line.set_xy2  (prevdailyh_line,limit_right , Previous_High) 
+        label.set_text(prevdailyh_label, GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'H' :  f_get_day(2) + ' High')
+        f_LevelMerge(pricearray, labelarray, Previous_High, prevdailyh_label, PreviousDailyColor)
+
+//PREVIOUS DAILY LOW
+    if is_PrevdailyLow_enabled
+        var prevdailyl_line = line.new(x1=Previous_Time, x2=limit_right, y1=Previous_Low, y2=Previous_Low, color=PreviousDailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var prevdailyl_label = label.new(x=limit_right, y=Previous_Low, text=GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'L' :  f_get_day(2) + ' Low', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=PreviousDailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (prevdailyl_line, Previous_Time,Previous_Low)   
+        line.set_xy2  (prevdailyl_line,limit_right , Previous_Low) 
+        label.set_text(prevdailyl_label, GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'L' :  f_get_day(2) + ' Low')
+        f_LevelMerge(pricearray, labelarray, Previous_Low, prevdailyl_label, PreviousDailyColor)
+
+//PREVIOUS DAILY OPEN
+    if is_PrevdailyOpen_enabled
+        var prevdailyO_line = line.new(x1=Previous_Time, x2=limit_right, y1=Previous_Open, y2=Previous_Open, color=PreviousDailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var prevdailyO_label = label.new(x=limit_right, y=Previous_Open, text=GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'O' :  f_get_day(2) + ' Open', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=PreviousDailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (prevdailyO_line, Previous_Time,Previous_Open)   
+        line.set_xy2  (prevdailyO_line,limit_right , Previous_Open) 
+        label.set_text(prevdailyO_label, GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'O' :  f_get_day(2) + ' Open')
+        f_LevelMerge(pricearray, labelarray, Previous_Open, prevdailyO_label, PreviousDailyColor)
+
+//PREVIOUS DAILY CLOSE
+    if is_PrevdailyClose_enabled
+        var prevdailyC_line = line.new(x1=Previous_Time, x2=limit_right, y1=Previous_Close, y2=Previous_Close, color=PreviousDailyColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var prevdailyC_label = label.new(x=limit_right, y=Previous_Close, text=GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'C' :  f_get_day(2) + ' Close', color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=PreviousDailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (prevdailyC_line, Previous_Time,Previous_Close)   
+        line.set_xy2  (prevdailyC_line,limit_right , Previous_Close) 
+        label.set_text(prevdailyC_label, GlobalTextType or PrevDailyTextType ?f_get_day2(2)+'C' :  f_get_day(2) + ' Close')
+        f_LevelMerge(pricearray, labelarray, Previous_Close, prevdailyC_label, PreviousDailyColor)
+
+//8 EMA
+    if is_8EMA_enabled
+        var ema8lne = line.new(MA_Time, ema8_price, limit_right, ema8_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema8lbl = label.new(x=limit_right, y=ema8_price, text=ema8Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema8lne, MA_Time,ema8_price)   
+        line.set_xy2  (ema8lne,limit_right , ema8_price) 
+        label.set_text(ema8lbl, ema8Text)
+        f_LevelMerge(pricearray, labelarray, ema8_price, ema8lbl, MADailyColor)
+
+//21 EMA
+    if is_21EMA_enabled
+        var ema21lne = line.new(MA_Time, ema21_price,limit_right, ema21_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var ema21lbl = label.new(x=limit_right, y=ema21_price, text=ema21Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (ema21lne, MA_Time,ema21_price)   
+        line.set_xy2  (ema21lne,limit_right , ema21_price) 
+        label.set_text(ema21lbl, ema21Text)
+        f_LevelMerge(pricearray, labelarray, ema21_price, ema21lbl, MADailyColor)
+
+//50 SMA
+    if is_50SMA_enabled
+        var sma50lne = line.new(MA_Time, sma50_price,limit_right, sma50_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma50lbl = label.new(x=limit_right, y=sma50_price, text=sma50Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma50lne, MA_Time,sma50_price)   
+        line.set_xy2  (sma50lne,limit_right , sma50_price) 
+        label.set_text(sma50lbl, sma50Text)
+        f_LevelMerge(pricearray, labelarray, sma50_price, sma50lbl, MADailyColor)
+
+//100 SMA
+    if is_100SMA_enabled
+        var sma100lne = line.new(MA_Time, sma100_price,limit_right, sma100_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma100lbl = label.new(x=limit_right, y=sma100_price, text=sma100Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1(sma100lne, MA_Time,sma100_price)   
+        line.set_xy2  (sma100lne,limit_right , sma100_price) 
+        label.set_text(sma100lbl, sma100Text)
+        f_LevelMerge(pricearray, labelarray, sma100_price, sma100lbl, MADailyColor)
+
+//200 SMA
+    if is_200SMA_enabled
+        var sma200lne = line.new(MA_Time, sma200_price,limit_right, sma200_price,  color = MADailyColor, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
+        var sma200lbl = label.new(x=limit_right, y=sma200_price, text=sma200text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MADailyColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (sma200lne, MA_Time,sma200_price)   
+        line.set_xy2  (sma200lne,limit_right , sma200_price) 
+        label.set_text(sma200lbl, sma200text)
+        f_LevelMerge(pricearray, labelarray, sma200_price, sma200lbl, MADailyColor)
+
+//Last Week HIGH 
+    if is_YesweeklyHigh_enabled
+        var yesweeklyh_line = line.new(x1=LastWeek_Time, x2=limit_right, y1=LastWeek_High, y2=LastWeek_High, color=LastWeekColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesweeklyh_label = label.new(x=limit_right, y=LastWeek_High, text=ywhtext, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=LastWeekColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesweeklyh_line, LastWeek_Time,LastWeek_High)   
+        line.set_xy2  (yesweeklyh_line,limit_right , LastWeek_High) 
+        label.set_text(yesweeklyh_label, ywhtext)
+        f_LevelMerge(pricearray, labelarray, LastWeek_High, yesweeklyh_label, LastWeekColor)
+
+//Last week LOW
+    if is_YesweeklyLow_enabled
+        var yesweeklyl_line = line.new(x1=LastWeek_Time, x2=limit_right, y1=LastWeek_Low, y2=LastWeek_Low, color=LastWeekColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesweeklyl_label = label.new(x=limit_right, y=LastWeek_Low, text=ywltext, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=LastWeekColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesweeklyl_line, LastWeek_Time,LastWeek_Low)   
+        line.set_xy2  (yesweeklyl_line,limit_right , LastWeek_Low) 
+        label.set_text(yesweeklyl_label, ywltext)
+        f_LevelMerge(pricearray, labelarray, LastWeek_Low, yesweeklyl_label, LastWeekColor)
+
+//Last week OPEN 
+    if is_YesweeklyOpen_enabled
+        var yesweeklyO_line = line.new(x1=LastWeek_Time, x2=limit_right, y1=LastWeek_Open, y2=LastWeek_Open, color=LastWeekColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesweeklyO_label = label.new(x=limit_right, y=LastWeek_Open, text=ywOtext, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=LastWeekColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesweeklyO_line, LastWeek_Time,LastWeek_Open)  
+        line.set_xy2  (yesweeklyO_line,limit_right , LastWeek_Open) 
+        label.set_text(yesweeklyO_label, ywOtext)
+        f_LevelMerge(pricearray, labelarray, LastWeek_Open, yesweeklyO_label, LastWeekColor)
+
+//Last week CLOSE
+    if is_YesweeklyClose_enabled
+        var yesweeklyC_line = line.new(x1=LastWeek_Time, x2=limit_right, y1=LastWeek_Close, y2=LastWeek_Close, color=LastWeekColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesweeklyC_label = label.new(x=limit_right, y=LastWeek_Close, text=ywCtext, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=LastWeekColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesweeklyC_line, LastWeek_Time,LastWeek_Close)  
+        line.set_xy2  (yesweeklyC_line,limit_right , LastWeek_Close) 
+        label.set_text(yesweeklyC_label, ywCtext)
+        f_LevelMerge(pricearray, labelarray, LastWeek_Close, yesweeklyC_label, LastWeekColor)
+
+//last month HIGH
+    if is_YesMonthHigh_enabled
+        var yesmonthh_line = line.new(x1=LastMonth_Time, x2=limit_right, y1= LastMonth_High, y2= LastMonth_High, color=LastMonthColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesmonthh_label = label.new(x=limit_right, y= LastMonth_High, text=ymhtext, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=LastMonthColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesmonthh_line, LastMonth_Time, LastMonth_High)   
+        line.set_xy2  (yesmonthh_line,limit_right ,  LastMonth_High) 
+        label.set_text(yesmonthh_label, ymhtext)
+        f_LevelMerge(pricearray, labelarray,  LastMonth_High, yesmonthh_label, LastMonthColor)
+
+//last month LOW 
+    if is_YesMonthLow_enabled
+        var yesmonthl_line = line.new(x1=LastMonth_Time, x2=limit_right, y1=LastMonth_Low, y2=LastMonth_Low, color=LastMonthColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesmonthl_label = label.new(x=limit_right, y=LastMonth_Low, text=ymltext, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=LastMonthColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesmonthl_line, LastMonth_Time,LastMonth_Low)   
+        line.set_xy2  (yesmonthl_line,limit_right , LastMonth_Low) 
+        label.set_text(yesmonthl_label, ymltext)
+        f_LevelMerge(pricearray, labelarray, LastMonth_Low, yesmonthl_label, LastMonthColor)
+
+//last month OPEN
+    if is_YesMonthOpen_enabled
+        var yesmonthO_line = line.new(x1=LastMonth_Time, x2=limit_right, y1=LastMonth_Open, y2=LastMonth_Open, color=LastMonthColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var yesmonthO_label = label.new(x=limit_right, y=LastMonth_Open, text=ymOtext, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=LastMonthColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (yesmonthO_line, LastMonth_Time,LastMonth_Open)   
+        line.set_xy2  (yesmonthO_line,limit_right , LastMonth_Open) 
+        label.set_text(yesmonthO_label, ymOtext)
+        f_LevelMerge(pricearray, labelarray, LastMonth_Open, yesmonthO_label, LastMonthColor)
+
+//last month CLOSE
+    if is_YesMonthClose_enabled
+        var lastmonthC_line = line.new(x1=LastMonth_Time, x2=limit_right, y1=LastMonth_Close, y2=LastMonth_Close, color=LastMonthColor, width=DEFAULT_LINE_WIDTH, xloc=xloc.bar_time, style=linestyles)
+        var lastmonthC_label = label.new(x=limit_right, y=LastMonth_Close, text=ymCtext, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=LastMonthColor, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+        line.set_xy1  (lastmonthC_line, LastMonth_Time,LastMonth_Close)   
+        line.set_xy2  (lastmonthC_line,limit_right , LastMonth_Close) 
+        label.set_text(lastmonthC_label, ymCtext)
+        f_LevelMerge(pricearray, labelarray, LastMonth_Close, lastmonthC_label, LastMonthColor)
+
+//Alert calculations
+ema8cross = ta.crossover(close, ema8_price) or ta.crossunder(close, ema8_price)
+ema21cross = ta.crossover(close,  ema21_price) or ta.crossunder(close, ema21_price)
+sma50cross = ta.crossover(close, sma50_price) or ta.crossunder(close, sma50_price)
+sma200cross = ta.crossover(close, sma200_price) or ta.crossunder(close, sma200_price)
+calc_on_every_tick=true
+if ema8cross 
+    alert("Crossing 8 EMA at $" + str.tostring (close) , alert.freq_once_per_bar)
+if ema21cross 
+    alert("Crossing 21 EMA at $" + str.tostring (close) , alert.freq_once_per_bar)
+if sma50cross 
+    alert("Crossing 50 SMA at $" + str.tostring (close) , alert.freq_once_per_bar)
+if sma200cross 
+    alert("Crossing 200 SMA at $" + str.tostring (close) , alert.freq_once_per_bar)
+
+//Opening Range Breakout
+inputMax = 120 
+
+if is_ORB_enabled
+    inputMax := 120 //highest timeframe you can view ORB
+else    
+    inputMax := 0 //dont show ORB on any timeframe
+    
+//t = time(timeframe.period, ORBSession + ":1234567")
+//t = time(timeframe.period, ORBSession)
+refsym = input.symbol("SPX500USD", "Reference for time range (So that it is in EST)")
+t = request.security(refsym, timeframe.period, time(timeframe.period, ORBSession), gaps=barmerge.gaps_on)
+
+hide = timeframe.isintraday and timeframe.multiplier <= inputMax
+
+is_newbar(res) => time(res) != 0
+in_session = not na(t)
+is_first_orb = in_session and not in_session[1]
+
+orb_high = float(na)
+orb_low = float(na)
+
+if is_first_orb
+    orb_high := high
+    orb_low := low
+else
+    orb_high := orb_high[1]
+    orb_low := orb_low[1]
+if high > orb_high and in_session
+    orb_high := high
+if low < orb_low and in_session
+    orb_low := low
+
+plot(hide ? orb_high : na , style=plot.style_circles, color=orb_high[1] != orb_high ? na : color.green, title="ORB High", linewidth=1)
+ORBH = label.new(x=timenow + ((time - time[1]) * DEFAULT_EXTEND_RIGHT) , y=orb_high, text=ORBHText, xloc=xloc.bar_time,color = color(na), style=DEFAULT_LABEL_STYLE, textcolor=color.green, size=size.small, textalign=text.align_center)
+//label.set_text(ORBH, ORBHText)
+label.delete(ORBH[1])
+
+plot(hide ? orb_low : na , style=plot.style_circles, color=orb_low[1] != orb_low ? na : color.red, title="ORB Low", linewidth=1)
+ORBL = label.new(x=timenow + ((time - time[1]) * DEFAULT_EXTEND_RIGHT), y=orb_low, text= ORBLText, xloc=xloc.bar_time,color = color(na), style=DEFAULT_LABEL_STYLE, textcolor=color.red, size=size.small, textalign=text.align_center)
+label.delete(ORBL[1])
