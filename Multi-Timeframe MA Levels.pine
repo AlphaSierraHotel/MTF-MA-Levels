@@ -1,11 +1,11 @@
 // This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // © allen92810
 
-// Credit goes to Lepelle [https://www.tradingview.com/u/Lepelle/] and his indicator,
-// "Lepelle's Key Levels" [https://www.tradingview.com/script/ltF1SePF-Lepelle-s-Key-Levels/] which were the basis
+// A ton of credit goes to Lepelle [https://www.tradingview.com/u/Lepelle/] and his indicator,
+// "Lepelle's Key Levels" [https://www.tradingview.com/script/ltF1SePF-Lepelle-s-Key-Levels/] which was the basis
 // for this indicator.  I first added an array of moving average levels to his work before then stripping it all
-// down to just the moving averages for this separate indicator.  This indicator is intended to be a complement to
-// and used with the "Lepelle's Key Levels" indicator.
+// down to just the moving averages to make this an independent indicator.  This indicator is intended to complement
+// and be used with the "Lepelle's Key Levels" indicator.
 
 //@version=5
 indicator("Multi-Timeframe MA Levels", shorttitle='MTF MA Levels', overlay=true, max_lines_count=120)
