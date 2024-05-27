@@ -190,6 +190,7 @@ var DEFAULT_EXTEND_RIGHT = distanceright
 //------------------------------------ Plotting ------------------------------------------------------------------------
 var pricearray = array.new_float(0)
 var labelarray = array.new_label(0)
+var arrayTable = table.new(position=position.top_right, columns=3, rows=26, bgcolor = color.yellow, border_width = 1)
 
 limit_right = timenow + ((time - time[5]) * DEFAULT_EXTEND_RIGHT) //Price Levels Distance
 
@@ -214,9 +215,11 @@ f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =
             label.set_text(currentlabel,label.get_text(currentlabel) +' ' + str.tostring (currentprice, '0.00') )
         label.set_xy(currentlabel, limit_right , currentprice)
 
-
-// reset the levels at the end of last bar
 if barstate.islast
+    table.cell(table_id=arrayTable, column = 1, row = 1, text = "pricearray : length = " + str.tostring(array.size(pricearray)))
+    table.cell(table_id=arrayTable, column = 2, row = 1, text = "labelarray : length = " + str.tostring(array.size(labelarray)))
+    
+    // reset the levels at the end of last bar
     pricearray := array.new_float(0)
     labelarray := array.new_label(0)
 
@@ -404,6 +407,11 @@ if barstate.islast
         line.set_xy2  (sma200_1Day_lne,limit_right , sma200_1Day_price) 
         label.set_text(sma200_1Day_lbl, sma200_1Day_Text)
         f_LevelMerge(pricearray, labelarray, sma200_1Day_price, sma200_1Day_lbl, MA_200SMA_Color)
+
+    for [priceindex, pricevalue] in pricearray
+        table.cell(table_id=arrayTable, column=1, row=2+priceindex, text=str.tostring(pricevalue))
+    for [labelindex, labelvalue] in labelarray
+        table.cell(table_id=arrayTable, column=2, row=2+labelindex, text=labelvalue.get_text())
 
 // Alert calculations ------------------------------------------------------------------------------------------------------------
 calc_on_every_tick=true
