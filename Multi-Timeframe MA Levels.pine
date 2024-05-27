@@ -142,11 +142,50 @@ var DEFAULT_LABEL_SIZE = fontsize
 
 var DEFAULT_EXTEND_RIGHT = distanceright
 
-//------------------------------ Alternate Time Frame Data ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[MA_2Min_Time,   ema8_2Min_price, ema21_2Min_price, sma50_2Min_price, sma100_2Min_price, sma200_2Min_price]  = request.security(syminfo.tickerid, '2',  [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
-[MA_5Min_Time,   ema8_5Min_price, ema21_5Min_price, sma50_5Min_price, sma100_5Min_price, sma200_5Min_price]  = request.security(syminfo.tickerid, '5',  [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
-[MA_1Hour_Time,  ema8_1Hour_price,ema21_1Hour_price,sma50_1Hour_price,sma100_1Hour_price,sma200_1Hour_price] = request.security(syminfo.tickerid, '60', [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
-[MA_1Day_Time,   ema8_1Day_price, ema21_1Day_price, sma50_1Day_price, sma100_1Day_price, sma200_1Day_price]  = request.security(syminfo.tickerid, 'D',  [time, ta.ema(close,8), ta.ema(close,21),ta.sma(close,50),ta.sma(close,100), ta.sma(close,200)], lookahead=barmerge.lookahead_on)
+//------------------------------ Alternate Time Frame Data -------------------------------------------------------------
+[MA_2Min_Time, ema8_2Min_price, ema21_2Min_price, sma50_2Min_price, sma100_2Min_price, sma200_2Min_price]
+     = request.security(syminfo.tickerid, '2',
+     [
+         time,
+         ta.ema(close,8),
+         ta.ema(close,21),
+         ta.sma(close,50),
+         ta.sma(close,100),
+         ta.sma(close,200)
+     ], lookahead=barmerge.lookahead_on)
+
+[MA_5Min_Time,  ema8_5Min_price, ema21_5Min_price, sma50_5Min_price, sma100_5Min_price, sma200_5Min_price]
+     = request.security(syminfo.tickerid, '5',
+     [
+         time,
+         ta.ema(close,8),
+         ta.ema(close,21),
+         ta.sma(close,50),
+         ta.sma(close,100),
+         ta.sma(close,200)
+     ], lookahead=barmerge.lookahead_on)
+
+[MA_1Hour_Time, ema8_1Hour_price,ema21_1Hour_price,sma50_1Hour_price,sma100_1Hour_price,sma200_1Hour_price]
+     = request.security(syminfo.tickerid, '60',
+     [
+         time,
+         ta.ema(close,8),
+         ta.ema(close,21),
+         ta.sma(close,50),
+         ta.sma(close,100),
+         ta.sma(close,200)
+     ], lookahead=barmerge.lookahead_on)
+
+[MA_1Day_Time,  ema8_1Day_price, ema21_1Day_price, sma50_1Day_price, sma100_1Day_price, sma200_1Day_price]
+     = request.security(syminfo.tickerid, 'D',
+     [
+         time,
+         ta.ema(close,8),
+         ta.ema(close,21),
+         ta.sma(close,50),
+         ta.sma(close,100),
+         ta.sma(close,200)
+     ], lookahead=barmerge.lookahead_on)
 
 //------------------------------------ Plotting --------------------------------------------------------------------------
 var pricearray = array.new_float(0)
