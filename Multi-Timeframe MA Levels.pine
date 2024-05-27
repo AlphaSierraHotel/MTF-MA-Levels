@@ -187,7 +187,7 @@ var DEFAULT_EXTEND_RIGHT = distanceright
          ta.sma(close,200)
      ], lookahead=barmerge.lookahead_on)
 
-//------------------------------------ Plotting --------------------------------------------------------------------------
+//------------------------------------ Plotting ------------------------------------------------------------------------
 var pricearray = array.new_float(0)
 var labelarray = array.new_label(0)
 
@@ -220,8 +220,9 @@ if barstate.islast
     pricearray := array.new_float(0)
     labelarray := array.new_label(0)
 
-// 2-Minute Timeframe EMA Lines ---------------------------------------------------------------------------------------------------
-//8 EMA (2 Minute)
+
+    // 2-Minute Timeframe EMA Lines ----------------------------------------------------------------------------------------
+    //8 EMA (2 Minute)
     if is_8EMA_2Min_enabled
         var ema8_2Min_lne = line.new(MA_2Min_Time, ema8_2Min_price, limit_right, ema8_2Min_price,  color = MA_8EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var ema8_2Min_lbl = label.new(x=limit_right, y=ema8_2Min_price, text=ema8_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_8EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -230,7 +231,7 @@ if barstate.islast
         label.set_text(ema8_2Min_lbl, ema8_2Min_Text)
         f_LevelMerge(pricearray, labelarray, ema8_2Min_price, ema8_2Min_lbl, MA_8EMA_Color)
 
-//21 EMA (2 Minute)
+    //21 EMA (2 Minute)
     if is_21EMA_2Min_enabled
         var ema21_2Min_lne = line.new(MA_2Min_Time, ema21_2Min_price,limit_right, ema21_2Min_price,  color = MA_21EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var ema21_2Min_lbl = label.new(x=limit_right, y=ema21_2Min_price, text=ema21_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_21EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -239,7 +240,7 @@ if barstate.islast
         label.set_text(ema21_2Min_lbl, ema21_2Min_Text)
         f_LevelMerge(pricearray, labelarray, ema21_2Min_price, ema21_2Min_lbl, MA_21EMA_Color)
 
-//50 SMA (2 Minute)
+    //50 SMA (2 Minute)
     if is_50SMA_2Min_enabled
         var sma50_2Min_lne = line.new(MA_2Min_Time, sma50_2Min_price,limit_right, sma50_2Min_price,  color = MA_50SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma50_2Min_lbl = label.new(x=limit_right, y=sma50_2Min_price, text=sma50_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_50SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -248,7 +249,7 @@ if barstate.islast
         label.set_text(sma50_2Min_lbl, sma50_2Min_Text)
         f_LevelMerge(pricearray, labelarray, sma50_2Min_price, sma50_2Min_lbl, MA_50SMA_Color)
 
-//100 SMA (2 Minute)
+    //100 SMA (2 Minute)
     if is_100SMA_2Min_enabled
         var sma100_2Min_lne = line.new(MA_2Min_Time, sma100_2Min_price,limit_right, sma100_2Min_price,  color = MA_100SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma100_2Min_lbl = label.new(x=limit_right, y=sma100_2Min_price, text=sma100_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_100SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -257,7 +258,7 @@ if barstate.islast
         label.set_text(sma100_2Min_lbl, sma100_2Min_Text)
         f_LevelMerge(pricearray, labelarray, sma100_2Min_price, sma100_2Min_lbl, MA_100SMA_Color)
 
-//200 SMA (2 Minute)
+    //200 SMA (2 Minute)
     if is_200SMA_2Min_enabled
         var sma200_2Min_lne = line.new(MA_2Min_Time, sma200_2Min_price,limit_right, sma200_2Min_price,  color = MA_200SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma200_2Min_lbl = label.new(x=limit_right, y=sma200_2Min_price, text=sma200_2Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MA_200SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -266,8 +267,8 @@ if barstate.islast
         label.set_text(sma200_2Min_lbl, sma200_2Min_Text)
         f_LevelMerge(pricearray, labelarray, sma200_2Min_price, sma200_2Min_lbl, MA_200SMA_Color)
 
-// 5-Minute Timeframe EMA Lines ---------------------------------------------------------------------------------------------------
-//8 EMA (5 Minute)
+    // 5-Minute Timeframe EMA Lines ----------------------------------------------------------------------------------------
+    //8 EMA (5 Minute)
     if is_8EMA_5Min_enabled
         var ema8_5Min_lne = line.new(MA_5Min_Time, ema8_5Min_price, limit_right, ema8_5Min_price,  color = MA_8EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var ema8_5Min_lbl = label.new(x=limit_right, y=ema8_5Min_price, text=ema8_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_8EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -276,7 +277,7 @@ if barstate.islast
         label.set_text(ema8_5Min_lbl, ema8_5Min_Text)
         f_LevelMerge(pricearray, labelarray, ema8_5Min_price, ema8_5Min_lbl, MA_8EMA_Color)
 
-//21 EMA (5 Minute)
+    //21 EMA (5 Minute)
     if is_21EMA_5Min_enabled
         var ema21_5Min_lne = line.new(MA_5Min_Time, ema21_5Min_price,limit_right, ema21_5Min_price,  color = MA_21EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var ema21_5Min_lbl = label.new(x=limit_right, y=ema21_5Min_price, text=ema21_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_21EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -285,7 +286,7 @@ if barstate.islast
         label.set_text(ema21_5Min_lbl, ema21_5Min_Text)
         f_LevelMerge(pricearray, labelarray, ema21_5Min_price, ema21_5Min_lbl, MA_21EMA_Color)
 
-//50 SMA (5 Minute)
+    //50 SMA (5 Minute)
     if is_50SMA_5Min_enabled
         var sma50_5Min_lne = line.new(MA_5Min_Time, sma50_5Min_price,limit_right, sma50_5Min_price,  color = MA_50SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma50_5Min_lbl = label.new(x=limit_right, y=sma50_5Min_price, text=sma50_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_50SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -294,7 +295,7 @@ if barstate.islast
         label.set_text(sma50_5Min_lbl, sma50_5Min_Text)
         f_LevelMerge(pricearray, labelarray, sma50_5Min_price, sma50_5Min_lbl, MA_50SMA_Color)
 
-//100 SMA (5 Minute)
+    //100 SMA (5 Minute)
     if is_100SMA_5Min_enabled
         var sma100_5Min_lne = line.new(MA_5Min_Time, sma100_5Min_price,limit_right, sma100_5Min_price,  color = MA_100SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma100_5Min_lbl = label.new(x=limit_right, y=sma100_5Min_price, text=sma100_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_100SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -303,7 +304,7 @@ if barstate.islast
         label.set_text(sma100_5Min_lbl, sma100_5Min_Text)
         f_LevelMerge(pricearray, labelarray, sma100_5Min_price, sma100_5Min_lbl, MA_100SMA_Color)
 
-//200 SMA (5 Minute)
+    //200 SMA (5 Minute)
     if is_200SMA_5Min_enabled
         var sma200_5Min_lne = line.new(MA_5Min_Time, sma200_5Min_price,limit_right, sma200_5Min_price,  color = MA_200SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma200_5Min_lbl = label.new(x=limit_right, y=sma200_5Min_price, text=sma200_5Min_Text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MA_200SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -312,8 +313,8 @@ if barstate.islast
         label.set_text(sma200_5Min_lbl, sma200_5Min_Text)
         f_LevelMerge(pricearray, labelarray, sma200_5Min_price, sma200_5Min_lbl, MA_200SMA_Color)
 
-// Hourly Timeframe EMA Lines ---------------------------------------------------------------------------------------------------
-//8 EMA (Hourly)
+    // Hourly Timeframe EMA Lines ------------------------------------------------------------------------------------------
+    //8 EMA (Hourly)
     if is_8EMA_1Hour_enabled
         var ema8_1Hour_lne = line.new(MA_1Hour_Time, ema8_1Hour_price, limit_right, ema8_1Hour_price,  color = MA_8EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var ema8_1Hour_lbl = label.new(x=limit_right, y=ema8_1Hour_price, text=ema8_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_8EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -322,7 +323,7 @@ if barstate.islast
         label.set_text(ema8_1Hour_lbl, ema8_1Hour_Text)
         f_LevelMerge(pricearray, labelarray, ema8_1Hour_price, ema8_1Hour_lbl, MA_8EMA_Color)
 
-//21 EMA (Hourly)
+    //21 EMA (Hourly)
     if is_21EMA_1Hour_enabled
         var ema21_1Hour_lne = line.new(MA_1Hour_Time, ema21_1Hour_price,limit_right, ema21_1Hour_price,  color = MA_21EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var ema21_1Hour_lbl = label.new(x=limit_right, y=ema21_1Hour_price, text=ema21_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_21EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -331,7 +332,7 @@ if barstate.islast
         label.set_text(ema21_1Hour_lbl, ema21_1Hour_Text)
         f_LevelMerge(pricearray, labelarray, ema21_1Hour_price, ema21_1Hour_lbl, MA_21EMA_Color)
 
-//50 SMA (Hourly)
+    //50 SMA (Hourly)
     if is_50SMA_1Hour_enabled
         var sma50_1Hour_lne = line.new(MA_1Hour_Time, sma50_1Hour_price,limit_right, sma50_1Hour_price,  color = MA_50SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma50_1Hour_lbl = label.new(x=limit_right, y=sma50_1Hour_price, text=sma50_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_50SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -340,7 +341,7 @@ if barstate.islast
         label.set_text(sma50_1Hour_lbl, sma50_1Hour_Text)
         f_LevelMerge(pricearray, labelarray, sma50_1Hour_price, sma50_1Hour_lbl, MA_50SMA_Color)
 
-//100 SMA (Hourly)
+    //100 SMA (Hourly)
     if is_100SMA_1Hour_enabled
         var sma100_1Hour_lne = line.new(MA_1Hour_Time, sma100_1Hour_price,limit_right, sma100_1Hour_price,  color = MA_100SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma100_1Hour_lbl = label.new(x=limit_right, y=sma100_1Hour_price, text=sma100_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_100SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -349,7 +350,7 @@ if barstate.islast
         label.set_text(sma100_1Hour_lbl, sma100_1Hour_Text)
         f_LevelMerge(pricearray, labelarray, sma100_1Hour_price, sma100_1Hour_lbl, MA_100SMA_Color)
 
-//200 SMA (Hourly)
+    //200 SMA (Hourly)
     if is_200SMA_1Hour_enabled
         var sma200_1Hour_lne = line.new(MA_1Hour_Time, sma200_1Hour_price,limit_right, sma200_1Hour_price,  color = MA_200SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma200_1Hour_lbl = label.new(x=limit_right, y=sma200_1Hour_price, text=sma200_1Hour_Text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MA_200SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -358,8 +359,8 @@ if barstate.islast
         label.set_text(sma200_1Hour_lbl, sma200_1Hour_Text)
         f_LevelMerge(pricearray, labelarray, sma200_1Hour_price, sma200_1Hour_lbl, MA_200SMA_Color)
 
-// Daily Timeframe EMA Lines ---------------------------------------------------------------------------------------------------
-//8 EMA (Daily)
+    // Daily Timeframe EMA Lines -------------------------------------------------------------------------------------------
+    //8 EMA (Daily)
     if is_8EMA_1Day_enabled
         var ema8_1Day_lne = line.new(MA_1Day_Time, ema8_1Day_price, limit_right, ema8_1Day_price,  color = MA_8EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var ema8_1Day_lbl = label.new(x=limit_right, y=ema8_1Day_price, text=ema8_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_8EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -368,7 +369,7 @@ if barstate.islast
         label.set_text(ema8_1Day_lbl, ema8_1Day_Text)
         f_LevelMerge(pricearray, labelarray, ema8_1Day_price, ema8_1Day_lbl, MA_8EMA_Color)
 
-//21 EMA (Daily)
+    //21 EMA (Daily)
     if is_21EMA_1Day_enabled
         var ema21_1Day_lne = line.new(MA_1Day_Time, ema21_1Day_price,limit_right, ema21_1Day_price,  color = MA_21EMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var ema21_1Day_lbl = label.new(x=limit_right, y=ema21_1Day_price, text=ema21_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_21EMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -377,7 +378,7 @@ if barstate.islast
         label.set_text(ema21_1Day_lbl, ema21_1Day_Text)
         f_LevelMerge(pricearray, labelarray, ema21_1Day_price, ema21_1Day_lbl, MA_21EMA_Color)
 
-//50 SMA (Daily)
+    //50 SMA (Daily)
     if is_50SMA_1Day_enabled
         var sma50_1Day_lne = line.new(MA_1Day_Time, sma50_1Day_price,limit_right, sma50_1Day_price,  color = MA_50SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma50_1Day_lbl = label.new(x=limit_right, y=sma50_1Day_price, text=sma50_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_50SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -386,7 +387,7 @@ if barstate.islast
         label.set_text(sma50_1Day_lbl, sma50_1Day_Text)
         f_LevelMerge(pricearray, labelarray, sma50_1Day_price, sma50_1Day_lbl, MA_50SMA_Color)
 
-//100 SMA (Daily)
+    //100 SMA (Daily)
     if is_100SMA_1Day_enabled
         var sma100_1Day_lne = line.new(MA_1Day_Time, sma100_1Day_price,limit_right, sma100_1Day_price,  color = MA_100SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma100_1Day_lbl = label.new(x=limit_right, y=sma100_1Day_price, text=sma100_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE, textcolor=MA_100SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
@@ -395,7 +396,7 @@ if barstate.islast
         label.set_text(sma100_1Day_lbl, sma100_1Day_Text)
         f_LevelMerge(pricearray, labelarray, sma100_1Day_price, sma100_1Day_lbl, MA_100SMA_Color)
 
-//200 SMA (Daily)
+    //200 SMA (Daily)
     if is_200SMA_1Day_enabled
         var sma200_1Day_lne = line.new(MA_1Day_Time, sma200_1Day_price,limit_right, sma200_1Day_price,  color = MA_200SMA_Color, width =DEFAULT_LINE_WIDTH, xloc=xloc.bar_time,style=linestyles)            
         var sma200_1Day_lbl = label.new(x=limit_right, y=sma200_1Day_price, text=sma200_1Day_Text, color = color(na),style=DEFAULT_LABEL_STYLE,textalign = text.align_right, textcolor=MA_200SMA_Color, size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
