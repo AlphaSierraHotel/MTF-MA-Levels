@@ -16,7 +16,7 @@ indicator("Multi-Timeframe MA Levels", shorttitle='MTF MA Levels', overlay=true,
 var linesize      = input.string(defval='Small', title='Line Width',     options=['Small', 'Medium', 'Large'],   group='Style Settings', inline='1')
 var linestyle     = input.string(defval='Solid', title='Line Style',     options=['Solid', 'Dashed', 'Dotted'],  group='Style Settings', inline='1')
 var labelsize     = input.string(defval='Small', title='   Text Size',   options=['Small', 'Medium', 'Large'],   group='Style Settings', inline='2')
-var distanceright = input.int   (defval=5,       title='Distance',       minval=1, maxval=100,                   group='Style Settings', inline='2', tooltip='Label distance from candlesticks, max 100. During Market Close, Distance does not work.')
+var distanceright = input.int   (defval=1,       title='Distance',       minval=1, maxval=100,                   group='Style Settings', inline='2', tooltip='Label distance from candlesticks, max 100. During Market Close, Distance does not work.')
 var labelpos      = input.string(defval='Right', title='Label Position', options=['Top', 'Right'],               group='Style Settings', inline='3')
 var HidePrice     = input.bool  (defval=false,   title='Hide Prices',                                            group='Style Settings', inline='4', tooltip='Hide Price on Levels')
 var useShorthand  = input.bool  (defval=false,   title='Use ShortHand',                                          group='Style Settings', inline='4', tooltip='Abbreviate Labels')
@@ -102,7 +102,7 @@ if linesize == 'Large'
     linewidthint
 
 var DEFAULT_LINE_WIDTH = linewidthint
-var DEFAULT_TAIL_WIDTH = linewidthint
+// var DEFAULT_TAIL_WIDTH = linewidthint // Unused variable
 
 fontsize = size.small
 
@@ -190,14 +190,15 @@ var DEFAULT_EXTEND_RIGHT = distanceright
 //------------------------------------ Plotting ------------------------------------------------------------------------
 var pricearray = array.new_float(0)
 var labelarray = array.new_label(0)
-// var arrayTable = table.new(position=position.top_right, columns=3, rows=26, bgcolor = color.yellow, border_width = 1)
+var arrayTable = table.new(position=position.top_right, columns=3, rows=26, bgcolor = color.yellow, border_width = 1)
 
 limit_right = timenow + ((time - time[5]) * DEFAULT_EXTEND_RIGHT) //Price Levels Distance
 
 f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =>
     // The logic here is temporary.  I'm considering other ways to scale down the price levels used for merging the labels
     usePrecision = currentprice < 400 ? 2 : currentprice > 4000 ? (currentprice > 20000 ? -1 : 0) : 1 // 400, 4000 and 20000 are arbitrary numbers
-    roundprice = math.round(usePrecision == -1 ? currentprice/10 : currentprice, usePrecision) //round will use 0 if precision is less and zero
+    roundprice = math.round(usePrecision == -1 ? currentprice/10 : currentprice, usePrecision) //round will use zero (truncate) if precision is less than zero
+
     if array.includes(pricearray, roundprice)
         whichindex = array.indexof(pricearray, roundprice)
         labelhold = array.get(labelarray, whichindex)
@@ -208,7 +209,6 @@ f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =
         label.set_text(currentlabel, '')
         label.set_textcolor(labelhold, currentcolor)
         label.set_style(labelhold, DEFAULT_LABEL_STYLE)
-              
     else  
         array.push(pricearray, roundprice)
         array.push(labelarray, currentlabel)
@@ -217,10 +217,7 @@ f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =
         label.set_textcolor(currentlabel, currentcolor)
     
 if barstate.islast
-    // table.cell(table_id=arrayTable, column = 1, row = 1, text = "pricearray : length = " + str.tostring(array.size(pricearray)))
-    // table.cell(table_id=arrayTable, column = 2, row = 1, text = "labelarray : length = " + str.tostring(array.size(labelarray)))
-    
-    // reset the levels at the end of last bar
+    // reset the arrays
     pricearray := array.new_float(0)
     labelarray := array.new_label(0)
 
@@ -408,10 +405,13 @@ if barstate.islast
         label.set_text(sma200_1Day_lbl, sma200_1Day_Text)
         f_LevelMerge(pricearray, labelarray, sma200_1Day_price, sma200_1Day_lbl, MA_200SMA_Color)
 
-    // for [priceindex, pricevalue] in pricearray
-    //     table.cell(table_id=arrayTable, column=1, row=2+priceindex, text=str.tostring(pricevalue))
-    // for [labelindex, labelvalue] in labelarray
-    //     table.cell(table_id=arrayTable, column=2, row=2+labelindex, text=labelvalue.get_text())
+    // Redraw the array contents in the table
+    table.cell(table_id=arrayTable, column = 1, row = 1, text = "pricearray : length = " + str.tostring(array.size(pricearray)))
+    table.cell(table_id=arrayTable, column = 2, row = 1, text = "labelarray : length = " + str.tostring(array.size(labelarray)))
+    for [priceindex, pricevalue] in pricearray
+        table.cell(table_id=arrayTable, column=1, row=2+priceindex, text=str.tostring(pricevalue))
+    for [labelindex, labelvalue] in labelarray
+        table.cell(table_id=arrayTable, column=2, row=2+labelindex, text=labelvalue.get_text())
 
 // Alert calculations --------------------------------------------------------------------------------------------------
 calc_on_every_tick=true
