@@ -6,7 +6,7 @@ This Pine Script is an indicator for displaying multiple moving average (MA) lev
 
 For example, it will show you where the 8 EMA on the 5 minute timeframe is on your 1-minute timeframe chart.
 
-It derives its look and function from [url=https://www.tradingview.com/script/ltF1SePF-Lepelle-s-Key-Levels/]"Lepelle's Key Levels"[/url] and focuses on visualizing various moving averages to complement this indicator.
+It derives its look and function from "Lepelle's Key Levels" and focuses on visualizing various moving averages to complement this indicator.
 
 
 █ [b]FEATURES[/b]
@@ -51,5 +51,13 @@ In essence, this script provides a comprehensive tool for technical analysis by 
 
 This script is best used with a short timeframe such as 1-minute or lower because of the limitations of Multi-Timeframe scripts.  Basically, the alternate timeframes in use should always be higher than the chart timeframe.
 
+
+═════════════════════════════════════════════════════════════
+
+
+█ [b]NOTES[/b]
+
+
+ • For other Key Levels to monitor, see the script that this one was derived from, [url=https://www.tradingview.com/script/ltF1SePF-Lepelle-s-Key-Levels/]"Lepelle's Key Levels"[/url]
 
 ═════════════════════════════════════════════════════════════
