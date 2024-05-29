@@ -1,5 +1,3 @@
-# MTF-MA-Levels
-
 █ [b]OVERVIEW[/b]
 
 This Pine Script is an indicator for displaying multiple moving average (MA) levels from several timeframes on your TradingView charts.  At the Realtime Bar (the right-most bar on your chart), it draws a line where the various moving averages currently are.
@@ -58,6 +56,9 @@ This script is best used with a short timeframe such as 1-minute or lower becaus
 █ [b]NOTES[/b]
 
 
- • For other Key Levels to monitor, see the script that this one was derived from, [url=https://www.tradingview.com/script/ltF1SePF-Lepelle-s-Key-Levels/]"Lepelle's Key Levels"[/url]
+This indicator is intended to complement and be used with [url=https://www.tradingview.com/script/ltF1SePF-Lepelle-s-Key-Levels/]"Lepelle's Key Levels"[/url] indicator.
+
+In that indictor settings, I recommend turning off the 5 Daily timeframe moving average levels in that script, if using this one.
+
 
 ═════════════════════════════════════════════════════════════
