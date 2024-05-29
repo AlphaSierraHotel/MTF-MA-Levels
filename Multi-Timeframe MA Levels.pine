@@ -10,13 +10,11 @@
 //@version=5
 indicator("Multi-Timeframe MA Levels", shorttitle='MTF MA Levels', overlay=true, max_lines_count=120)
 
-// var ALERT_TT = "Enabling the alert here is only part of the process of getting alerts.  You also need to create an alert on this indicator.  You only need to do this once: From the chart, create an alert using the 'Create Alert' dialog box and select this indicator in the 'Condition' field. See https://www.tradingview.com/chart/?solution=43000597494"
-
 //------------------------------ Styling Inputs ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 var linesize      = input.string(defval='Small', title='Line Width',     options=['Small', 'Medium', 'Large'],   group='Style Settings', inline='1')
 var linestyle     = input.string(defval='Solid', title='Line Style',     options=['Solid', 'Dashed', 'Dotted'],  group='Style Settings', inline='1')
 var labelsize     = input.string(defval='Small', title='   Text Size',   options=['Small', 'Medium', 'Large'],   group='Style Settings', inline='2')
-var distanceright = input.int   (defval=5,       title='Distance',       minval=1, maxval=100,                   group='Style Settings', inline='2', tooltip='Label distance from candlesticks, max 100. During Market Close, Distance does not work.')
+var distanceright = input.int   (defval=1,       title='Distance',       minval=1, maxval=100,                   group='Style Settings', inline='2', tooltip='Label distance from candlesticks, max 100. During Market Close, Distance does not work.')
 var labelpos      = input.string(defval='Right', title='Label Position', options=['Top', 'Right'],               group='Style Settings', inline='3')
 var HidePrice     = input.bool  (defval=false,   title='Hide Prices',                                            group='Style Settings', inline='4', tooltip='Hide Price on Levels')
 var useShorthand  = input.bool  (defval=false,   title='Use ShortHand',                                          group='Style Settings', inline='4', tooltip='Abbreviate Labels')
@@ -52,17 +50,6 @@ var is_200SMA_2Min_enabled  = input.bool(defval=false,      title='2 Min',   gro
 var is_200SMA_5Min_enabled  = input.bool(defval=false,      title='5 Min',   group='Moving Average Levels', inline='6')
 var is_200SMA_1Hour_enabled = input.bool(defval=true,       title='Hourly',  group='Moving Average Levels', inline='6')
 var is_200SMA_1Day_enabled  = input.bool(defval=true,       title='Daily',   group='Moving Average Levels', inline='6')
-
-//------------------------------ Moving Averages Crossover Alert Inputs ---------------------------------------------------------------------
-// var is_8EMA_1Hour_Alert_enabled   = input.bool(defval=false, title='Enable alert on 8 EMA (Hourly) crossover',   group='Hourly Moving Average Crossover Alerts', tooltip=ALERT_TT)
-// var is_21EMA_1Hour_Alert_enabled  = input.bool(defval=false, title='Enable alert on 21 EMA (Hourly) crossover',  group='Hourly Moving Average Crossover Alerts', tooltip=ALERT_TT)
-// var is_50SMA_1Hour_Alert_enabled  = input.bool(defval=false, title='Enable alert on 50 SMA (Hourly) crossover',  group='Hourly Moving Average Crossover Alerts', tooltip=ALERT_TT)
-// var is_200SMA_1Hour_Alert_enabled = input.bool(defval=false, title='Enable alert on 200 SMA (Hourly) crossover', group='Hourly Moving Average Crossover Alerts', tooltip=ALERT_TT)
-
-// var is_8EMA_1Day_Alert_enabled   = input.bool(defval=false, title='Enable alert on 8 EMA (Daily) crossover',     group='Daily Moving Average Crossover Alerts', tooltip=ALERT_TT)
-// var is_21EMA_1Day_Alert_enabled  = input.bool(defval=false, title='Enable alert on 21 EMA (Daily) crossover',    group='Daily Moving Average Crossover Alerts', tooltip=ALERT_TT)
-// var is_50SMA_1Day_Alert_enabled  = input.bool(defval=false, title='Enable alert on 50 SMA (Daily) crossover',    group='Daily Moving Average Crossover Alerts', tooltip=ALERT_TT)
-// var is_200SMA_1Day_Alert_enabled = input.bool(defval=false, title='Enable alert on 200 SMA (Daily) crossover',   group='Daily Moving Average Crossover Alerts', tooltip=ALERT_TT)
 
 // Define label text to be used
 var ema8_2Min_Text   = useShorthand ?  '8ma(2)' : '8 EMA (2 Min)'  
@@ -190,7 +177,6 @@ var DEFAULT_EXTEND_RIGHT = distanceright
 //------------------------------------ Plotting ------------------------------------------------------------------------
 var pricearray = array.new_float(0)
 var labelarray = array.new_label(0)
-// var arrayTable = table.new(position=position.top_right, columns=3, rows=26, bgcolor = color.yellow, border_width = 1)
 
 limit_right = timenow + ((time - time[5]) * DEFAULT_EXTEND_RIGHT) //Price Levels Distance
 
@@ -198,6 +184,7 @@ f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =
     // The logic here is temporary.  I'm considering other ways to scale down the price levels used for merging the labels
     usePrecision = currentprice < 400 ? 2 : currentprice > 4000 ? (currentprice > 20000 ? -1 : 0) : 1 // 400, 4000 and 20000 are arbitrary numbers
     roundprice = math.round(usePrecision == -1 ? currentprice/10 : currentprice, usePrecision) //round will use 0 if precision is less and zero
+
     if array.includes(pricearray, roundprice)
         whichindex = array.indexof(pricearray, roundprice)
         labelhold = array.get(labelarray, whichindex)
@@ -217,10 +204,7 @@ f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =
         label.set_textcolor(currentlabel, currentcolor)
     
 if barstate.islast
-    // table.cell(table_id=arrayTable, column = 1, row = 1, text = "pricearray : length = " + str.tostring(array.size(pricearray)))
-    // table.cell(table_id=arrayTable, column = 2, row = 1, text = "labelarray : length = " + str.tostring(array.size(labelarray)))
-    
-    // reset the levels at the end of last bar
+    // reset the arrays
     pricearray := array.new_float(0)
     labelarray := array.new_label(0)
 
@@ -408,11 +392,6 @@ if barstate.islast
         label.set_text(sma200_1Day_lbl, sma200_1Day_Text)
         f_LevelMerge(pricearray, labelarray, sma200_1Day_price, sma200_1Day_lbl, MA_200SMA_Color)
 
-    // for [priceindex, pricevalue] in pricearray
-    //     table.cell(table_id=arrayTable, column=1, row=2+priceindex, text=str.tostring(pricevalue))
-    // for [labelindex, labelvalue] in labelarray
-    //     table.cell(table_id=arrayTable, column=2, row=2+labelindex, text=labelvalue.get_text())
-
 // Alert calculations --------------------------------------------------------------------------------------------------
 calc_on_every_tick=true
 
@@ -421,13 +400,13 @@ ema8crossD   = ta.crossover(close, ema8_1Day_price)   or ta.crossunder(close, em
 ema21crossD  = ta.crossover(close, ema21_1Day_price)  or ta.crossunder(close, ema21_1Day_price)
 sma50crossD  = ta.crossover(close, sma50_1Day_price)  or ta.crossunder(close, sma50_1Day_price)
 sma200crossD = ta.crossover(close, sma200_1Day_price) or ta.crossunder(close, sma200_1Day_price)
-if ema8crossD // and is_8EMA_1Day_Alert_enabled 
+if ema8crossD 
     alert("Crossing 8 EMA (Daily) at $" + str.tostring (close) , alert.freq_once_per_bar)
-if ema21crossD // and is_21EMA_1Day_Alert_enabled
+if ema21crossD
     alert("Crossing 21 EMA (Daily) at $" + str.tostring (close) , alert.freq_once_per_bar)
-if sma50crossD // and is_50SMA_1Day_Alert_enabled
+if sma50crossD
     alert("Crossing 50 SMA (Daily) at $" + str.tostring (close) , alert.freq_once_per_bar)
-if sma200crossD // and is_200SMA_1Day_Alert_enabled
+if sma200crossD
     alert("Crossing 200 SMA (Daily) at $" + str.tostring (close) , alert.freq_once_per_bar)
 
 // Hourly Moving Average Crossovers
@@ -435,11 +414,11 @@ ema8crossH   = ta.crossover(close, ema8_1Hour_price)   or ta.crossunder(close, e
 ema21crossH  = ta.crossover(close, ema21_1Hour_price)  or ta.crossunder(close, ema21_1Hour_price)
 sma50crossH  = ta.crossover(close, sma50_1Hour_price)  or ta.crossunder(close, sma50_1Hour_price)
 sma200crossH = ta.crossover(close, sma200_1Hour_price) or ta.crossunder(close, sma200_1Hour_price)
-if ema8crossH // and is_8EMA_1Hour_Alert_enabled
+if ema8crossH
     alert("Crossing 8 EMA (Hourly) at $" + str.tostring (close) , alert.freq_once_per_bar)
-if ema21crossH // and is_21EMA_1Hour_Alert_enabled
+if ema21crossH
     alert("Crossing 21 EMA (Hourly) at $" + str.tostring (close) , alert.freq_once_per_bar)
-if sma50crossH // and is_50SMA_1Hour_Alert_enabled
+if sma50crossH
     alert("Crossing 50 SMA (Hourly) at $" + str.tostring (close) , alert.freq_once_per_bar)
-if sma200crossH // and is_200SMA_1Hour_Alert_enabled
+if sma200crossH
     alert("Crossing 200 SMA (Hourly) at $" + str.tostring (close) , alert.freq_once_per_bar)
