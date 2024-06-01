@@ -8,7 +8,10 @@
 // and be used with the "Lepelle's Key Levels" indicator.
 
 //@version=5
-indicator("Multi-Timeframe MA Levels", shorttitle='MTF MA Levels', overlay=true, max_lines_count=120)
+indicator("Multi-Timeframe MA Levels", shorttitle='MTF MA Levels', overlay=true)
+
+// Provides high() and low() for highest `high` and lowest `low` in visible bars
+import PineCoders/VisibleChart/4
 
 //------------------------------ Styling Inputs ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 var linesize      = input.string(defval='Small', title='Line Width',     options=['Small', 'Medium', 'Large'],   group='Style Settings', inline='1')
@@ -76,55 +79,32 @@ var sma50_1Day_Text  = useShorthand ? '50ma(d)' : '50 SMA (Daily)'
 var sma100_1Day_Text = useShorthand ? '100ma(d)' :'100 SMA (Daily)'
 var sma200_1Day_Text = useShorthand ? '200ma(d)' : '200 SMA (Daily)'
 
+// Define the number of rows of labels than can comfortably be displayed in the visible range
+var maxLabels = 39    // (higher = less merging, more overlapping)
+
 // Apply global style settings ----------------------------------------------
-linewidthint = 1
-if linesize == 'Small'
-    linewidthint := 1
-    linewidthint
-if linesize == 'Medium'
-    linewidthint := 2
-    linewidthint
-if linesize == 'Large'
-    linewidthint := 3
-    linewidthint
+var int DEFAULT_LINE_WIDTH = switch linesize
+    'Medium' => 2
+    'Large'  => 3
+    => 1
 
-var DEFAULT_LINE_WIDTH = linewidthint
+var DEFAULT_LABEL_SIZE = switch labelsize
+    'Medium' => 
+        maxLabels := 28
+        size.normal
+    'Large'  =>
+        maxLabels := 18
+        size.large
+    => size.small
 
-fontsize = size.small
+var linestyles = switch linestyle
+    'Dashed' => line.style_dashed
+    'Dotted' => line.style_dotted
+    => line.style_solid
 
-if labelsize == 'Small'
-    fontsize := size.small
-    fontsize
-
-if labelsize == 'Medium'
-    fontsize := size.normal
-    fontsize
-
-if labelsize == 'Large'
-    fontsize := size.large
-    fontsize
-
-linestyles = line.style_solid
-if linestyle == 'Dashed'
-    linestyles := line.style_dashed
-    linestyles
-
-if linestyle == 'Dotted'
-    linestyles := line.style_dotted
-    linestyles
-
-var DEFAULT_LABEL_STYLE = label.style_label_left
-
-if labelpos == 'Top'
-    DEFAULT_LABEL_STYLE := label.style_none
-
-if labelpos == 'Bottom'
-    DEFAULT_LABEL_STYLE := label.style_label_left
-
-if labelpos == 'Left'
-    DEFAULT_LABEL_STYLE :=  label.style_label_left
-
-var DEFAULT_LABEL_SIZE = fontsize
+var DEFAULT_LABEL_STYLE = switch labelpos
+    'Top'    => label.style_none
+    => label.style_label_left
 
 var DEFAULT_EXTEND_RIGHT = distanceright
 
@@ -140,7 +120,7 @@ var DEFAULT_EXTEND_RIGHT = distanceright
          ta.sma(close,200)
      ], lookahead=barmerge.lookahead_on)
 
-[MA_5Min_Time,  ema8_5Min_price, ema21_5Min_price, sma50_5Min_price, sma100_5Min_price, sma200_5Min_price]
+[MA_5Min_Time, ema8_5Min_price, ema21_5Min_price, sma50_5Min_price, sma100_5Min_price, sma200_5Min_price]
      = request.security(syminfo.tickerid, '5',
      [
          time,
@@ -162,7 +142,7 @@ var DEFAULT_EXTEND_RIGHT = distanceright
          ta.sma(close,200)
      ], lookahead=barmerge.lookahead_on)
 
-[MA_1Day_Time,  ema8_1Day_price, ema21_1Day_price, sma50_1Day_price, sma100_1Day_price, sma200_1Day_price]
+[MA_1Day_Time, ema8_1Day_price, ema21_1Day_price, sma50_1Day_price, sma100_1Day_price, sma200_1Day_price]
      = request.security(syminfo.tickerid, 'D',
      [
          time,
@@ -180,28 +160,61 @@ var arrayTable = table.new(position=position.top_right, columns=3, rows=26, bgco
 
 limit_right = timenow + ((time - time[5]) * DEFAULT_EXTEND_RIGHT) //Price Levels Distance
 
-f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =>
-    // The logic here is temporary.  I'm considering other ways to scale down the price levels used for merging the labels
-    usePrecision = currentprice < 400 ? 2 : currentprice > 4000 ? (currentprice > 20000 ? -1 : 0) : 1 // 400, 4000 and 20000 are arbitrary numbers
-    roundprice = math.round(usePrecision == -1 ? currentprice/10 : currentprice, usePrecision) //round will use zero (truncate) if precision is less than zero
+// Get the highest high and lowest low on the chart
+float highestPrice = VisibleChart.high()
+float lowestPrice = VisibleChart.low()
 
-    if array.includes(pricearray, roundprice)
-        whichindex = array.indexof(pricearray, roundprice)
+// Calculate the range of the prices
+float priceRange = highestPrice - lowestPrice
+
+// Calculate the threshold for merging labels
+float mergeThreshold = priceRange / maxLabels
+
+// Function to check if two prices are within an absolute threshold
+f_isWithinThreshold(price1, price2, threshold) =>
+    math.abs(price1 - price2) <= threshold
+
+// Function to merge levels that are within a threshold
+f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =>
+    // Check if current price is close to any existing price in pricearray
+    found = false
+    whichindex = int(na)
+    if array.size(pricearray) > 0
+        for i = 0 to array.size(pricearray) - 1
+            existingPrice = array.get(pricearray, i)
+            if f_isWithinThreshold(currentprice, existingPrice, mergeThreshold)
+                found := true
+                whichindex := i
+                break
+
+    if found
+        // Merge the labels, average the price, update pricearray
+        pricehold = array.get(pricearray, whichindex)
         labelhold = array.get(labelarray, whichindex)
         whichtext = label.get_text(labelhold)
-        holdprice = label.get_y(labelhold)
-        label.set_text(labelhold, label.get_text(currentlabel)  + (HidePrice ? '' : ' ' + str.tostring(currentprice, '0.00')) + ' / ' + whichtext)
-        label.set_xy(labelhold, limit_right, math.avg(currentprice,holdprice))
+        // Count the slashes in the existing label to determine how many levels are merged already. One slash = two levels merged
+        numPreMerged = 1 + str.length(whichtext) - str.length(str.replace_all(whichtext, "/", ""))
+        // Multiply the existing price level by the number of merged prices
+        preMergedPrice = pricehold * numPreMerged
+        // Determine a new average price by adding in the (new) current price and then dividing by the number of previously merged prices + 1 
+        newAvgPrice = (preMergedPrice + currentprice) / (numPreMerged + 1)
+        // Update the price array with the new average price
+        array.set(pricearray,whichindex,newAvgPrice)
+        label.set_text(labelhold, label.get_text(currentlabel) + (HidePrice ? '' : ' ' + str.tostring(currentprice, '0.00')) + ' / ' + whichtext)
+        label.set_xy(labelhold, limit_right, newAvgPrice)
         label.set_text(currentlabel, '')
         label.set_textcolor(labelhold, currentcolor)
         label.set_style(labelhold, DEFAULT_LABEL_STYLE)
-    else  
-        array.push(pricearray, roundprice)
+    else
+        // Add the new price and label
+        array.push(pricearray, currentprice)
         array.push(labelarray, currentlabel)
-        label.set_text(currentlabel,label.get_text(currentlabel) + (HidePrice ? '' : ' ' + str.tostring(currentprice, '0.00')))
+        label.set_text(currentlabel, label.get_text(currentlabel) + (HidePrice ? '' : ' ' + str.tostring(currentprice, '0.00')))
         label.set_xy(currentlabel, limit_right, currentprice)
         label.set_textcolor(currentlabel, currentcolor)
     
+// *********************************************************************************************************************
+
 if barstate.islast
     // reset the arrays
     pricearray := array.new_float(0)
@@ -392,7 +405,7 @@ if barstate.islast
         f_LevelMerge(pricearray, labelarray, sma200_1Day_price, sma200_1Day_lbl, MA_200SMA_Color)
 
     // Redraw the array contents in the table
-    table.cell(table_id=arrayTable, column = 1, row = 1, text = "pricearray : length = " + str.tostring(array.size(pricearray)))
+    table.cell(table_id=arrayTable, column = 1, row = 1, text = "pricearray : threshold = " + str.tostring(mergeThreshold) + "")
     table.cell(table_id=arrayTable, column = 2, row = 1, text = "labelarray : length = " + str.tostring(array.size(labelarray)))
     for [priceindex, pricevalue] in pricearray
         table.cell(table_id=arrayTable, column=1, row=2+priceindex, text=str.tostring(pricevalue))
