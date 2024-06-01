@@ -149,7 +149,6 @@ limit_right = timenow + ((time - time[5]) * distanceright) //Price Levels Distan
 //------------------------------------ Plotting ------------------------------------------------------------------------
 var pricearray = array.new_float(0)
 var labelarray = array.new_label(0)
-var arrayTable = table.new(position=position.top_right, columns=3, rows=26, bgcolor = color.yellow, border_width = 1)
 
 // Define the number of rows of labels than can comfortably be displayed in the visible range
 // Using labelsize allows us to use a lower number for the larger fonts
@@ -401,14 +400,6 @@ if barstate.islast
         line.set_xy2  (sma200_1Day_lne,limit_right , sma200_1Day_price) 
         label.set_text(sma200_1Day_lbl, sma200_1Day_Text)
         f_LevelMerge(pricearray, labelarray, sma200_1Day_price, sma200_1Day_lbl, MA_200SMA_Color, mergeThreshold)
-
-    // Redraw the array contents in the table
-    table.cell(table_id=arrayTable, column = 1, row = 1, text = "pricearray : threshold = " + str.tostring(mergeThreshold) + "")
-    table.cell(table_id=arrayTable, column = 2, row = 1, text = "labelarray : length = " + str.tostring(array.size(labelarray)))
-    for [priceindex, pricevalue] in pricearray
-        table.cell(table_id=arrayTable, column=1, row=2+priceindex, text=str.tostring(pricevalue))
-    for [labelindex, labelvalue] in labelarray
-        table.cell(table_id=arrayTable, column=2, row=2+labelindex, text=labelvalue.get_text())
 
 // Alert calculations --------------------------------------------------------------------------------------------------
 calc_on_every_tick=true
