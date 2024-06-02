@@ -8,7 +8,10 @@
 // and be used with the "Lepelle's Key Levels" indicator.
 
 //@version=5
-indicator("Multi-Timeframe MA Levels", shorttitle='MTF MA Levels', overlay=true, max_lines_count=120)
+indicator("Multi-Timeframe MA Levels", shorttitle='MTF MA Levels', overlay=true)
+
+// Provides high() and low() for highest `high` and lowest `low` in visible bars
+import PineCoders/VisibleChart/4 as VisibleChart
 
 //------------------------------ Styling Inputs ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 var linesize      = input.string(defval='Small', title='Line Width',     options=['Small', 'Medium', 'Large'],   group='Style Settings', inline='1')
@@ -19,7 +22,7 @@ var labelpos      = input.string(defval='Right', title='Label Position', options
 var HidePrice     = input.bool  (defval=false,   title='Hide Prices',                                            group='Style Settings', inline='4', tooltip='Hide Price on Levels')
 var useShorthand  = input.bool  (defval=false,   title='Use ShortHand',                                          group='Style Settings', inline='4', tooltip='Abbreviate Labels')
 
-//------------------------------ Moving Averages Array Inputs ---------------------------------------------------------------------
+//------------------------------ Moving Averages Inputs Array ---------------------------------------------------------------------
 var MA_8EMA_Color           = input.color(defval=#ffeb3b, title=  '8 EMA', group='Moving Average Levels', inline='2')
 var MA_21EMA_Color          = input.color(defval=#00bcd4, title= '21 EMA', group='Moving Average Levels', inline='3')
 var MA_50SMA_Color          = input.color(defval=#4caf50, title= '50 SMA', group='Moving Average Levels', inline='4')
@@ -77,57 +80,26 @@ var sma100_1Day_Text = useShorthand ? '100ma(d)' :'100 SMA (Daily)'
 var sma200_1Day_Text = useShorthand ? '200ma(d)' : '200 SMA (Daily)'
 
 // Apply global style settings ----------------------------------------------
-linewidthint = 1
-if linesize == 'Small'
-    linewidthint := 1
-    linewidthint
-if linesize == 'Medium'
-    linewidthint := 2
-    linewidthint
-if linesize == 'Large'
-    linewidthint := 3
-    linewidthint
+var int DEFAULT_LINE_WIDTH = switch linesize
+    'Medium' => 2
+    'Large'  => 3
+    => 1    // Small
 
-var DEFAULT_LINE_WIDTH = linewidthint
-var DEFAULT_TAIL_WIDTH = linewidthint
+var DEFAULT_LABEL_SIZE = switch labelsize
+    'Medium' => size.normal
+    'Large'  => size.large
+    => size.small   // Small
 
-fontsize = size.small
+var linestyles = switch linestyle
+    'Dashed' => line.style_dashed
+    'Dotted' => line.style_dotted
+    => line.style_solid     // Solid
 
-if labelsize == 'Small'
-    fontsize := size.small
-    fontsize
+var DEFAULT_LABEL_STYLE = switch labelpos
+    'Top'    => label.style_none
+    => label.style_label_left   // Right
 
-if labelsize == 'Medium'
-    fontsize := size.normal
-    fontsize
-
-if labelsize == 'Large'
-    fontsize := size.large
-    fontsize
-
-linestyles = line.style_solid
-if linestyle == 'Dashed'
-    linestyles := line.style_dashed
-    linestyles
-
-if linestyle == 'Dotted'
-    linestyles := line.style_dotted
-    linestyles
-
-var DEFAULT_LABEL_STYLE = label.style_label_left
-
-if labelpos == 'Top'
-    DEFAULT_LABEL_STYLE := label.style_none
-
-if labelpos == 'Bottom'
-    DEFAULT_LABEL_STYLE := label.style_label_left
-
-if labelpos == 'Left'
-    DEFAULT_LABEL_STYLE :=  label.style_label_left
-
-var DEFAULT_LABEL_SIZE = fontsize
-
-var DEFAULT_EXTEND_RIGHT = distanceright
+limit_right = timenow + ((time - time[5]) * distanceright) //Price Levels Distance
 
 //------------------------------ Alternate Time Frame Data -------------------------------------------------------------
 [MA_2Min_Time, ema8_2Min_price, ema21_2Min_price, sma50_2Min_price, sma100_2Min_price, sma200_2Min_price]
@@ -141,7 +113,7 @@ var DEFAULT_EXTEND_RIGHT = distanceright
          ta.sma(close,200)
      ], lookahead=barmerge.lookahead_on)
 
-[MA_5Min_Time,  ema8_5Min_price, ema21_5Min_price, sma50_5Min_price, sma100_5Min_price, sma200_5Min_price]
+[MA_5Min_Time, ema8_5Min_price, ema21_5Min_price, sma50_5Min_price, sma100_5Min_price, sma200_5Min_price]
      = request.security(syminfo.tickerid, '5',
      [
          time,
@@ -163,7 +135,7 @@ var DEFAULT_EXTEND_RIGHT = distanceright
          ta.sma(close,200)
      ], lookahead=barmerge.lookahead_on)
 
-[MA_1Day_Time,  ema8_1Day_price, ema21_1Day_price, sma50_1Day_price, sma100_1Day_price, sma200_1Day_price]
+[MA_1Day_Time, ema8_1Day_price, ema21_1Day_price, sma50_1Day_price, sma100_1Day_price, sma200_1Day_price]
      = request.security(syminfo.tickerid, 'D',
      [
          time,
@@ -178,31 +150,68 @@ var DEFAULT_EXTEND_RIGHT = distanceright
 var pricearray = array.new_float(0)
 var labelarray = array.new_label(0)
 
-limit_right = timenow + ((time - time[5]) * DEFAULT_EXTEND_RIGHT) //Price Levels Distance
+// Define the number of rows of labels than can comfortably be displayed in the visible range
+// Using labelsize allows us to use a lower number for the larger fonts
+var maxLabels = switch labelsize   // (higher = less merging, more overlapping)
+    'Medium' => 26
+    'Large'  => 16
+    => 36   // Small
 
-f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =>
-    // The logic here is temporary.  I'm considering other ways to scale down the price levels used for merging the labels
-    usePrecision = currentprice < 400 ? 2 : currentprice > 4000 ? (currentprice > 20000 ? -1 : 0) : 1 // 400, 4000 and 20000 are arbitrary numbers
-    roundprice = math.round(usePrecision == -1 ? currentprice/10 : currentprice, usePrecision) //round will use 0 if precision is less and zero
 
-    if array.includes(pricearray, roundprice)
-        whichindex = array.indexof(pricearray, roundprice)
+// Calculate the threshold for merging labels
+float mergeThreshold = (VisibleChart.high() - VisibleChart.low()) / maxLabels
+
+// *********************************************************************************************************************
+// Function declarations
+// *********************************************************************************************************************
+
+// @function            Used to merge labels whose price levels (y coordinates) are within a threshold of each other
+// @param pricearray    (float array) This array contains the levels (y coordinates) of each existing label
+// @param labelarray    (label array) This array conatins the existing labels
+// @param currentprice  (float) The price (level) that a newly created line is drawn at
+// @param currentlabel  (label) The newly created label that will be evaluated to merge with an existing label or leave independent
+// @param currentcolor  (color) The color to use for the newly created label (matches the color of the line drawn)
+// @param threshold     (float) the allowable variance between the new level created and an existing level
+f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor, threshold) =>
+    // Check if current price is close to any existing price in pricearray
+    found = false
+    whichindex = int(na)
+    if array.size(pricearray) > 0
+        for i = 0 to array.size(pricearray) - 1
+            existingPrice = array.get(pricearray, i)
+            if math.abs(currentprice - existingPrice) <= threshold
+                found := true
+                whichindex := i
+                break
+
+    if found
+        // Merge the labels, average the price, update pricearray
+        pricehold = array.get(pricearray, whichindex)
         labelhold = array.get(labelarray, whichindex)
         whichtext = label.get_text(labelhold)
-        holdprice = label.get_y(labelhold)
-        label.set_text(labelhold, label.get_text(currentlabel)  + (HidePrice ? '' : ' ' + str.tostring(currentprice, '0.00')) + ' / ' + whichtext)
-        label.set_xy(labelhold, limit_right, math.avg(currentprice,holdprice))
+        // Count the slashes in the existing label to determine how many levels are merged already. One slash = two levels merged
+        numPreMerged = 1 + str.length(whichtext) - str.length(str.replace_all(whichtext, "/", ""))
+        // Multiply the existing price level by the number of merged prices
+        preMergedPrice = pricehold * numPreMerged
+        // Determine a new average price by adding in the (new) current price and then dividing by the number of previously merged prices + 1 
+        newAvgPrice = (preMergedPrice + currentprice) / (numPreMerged + 1)
+        // Update the price array with the new average price
+        array.set(pricearray,whichindex,newAvgPrice)
+        label.set_text(labelhold, label.get_text(currentlabel) + (HidePrice ? '' : ' ' + str.tostring(currentprice, '0.00')) + ' / ' + whichtext)
+        label.set_xy(labelhold, limit_right, newAvgPrice)   // Update the xy coordinates with the new average price
         label.set_text(currentlabel, '')
         label.set_textcolor(labelhold, currentcolor)
         label.set_style(labelhold, DEFAULT_LABEL_STYLE)
-              
-    else  
-        array.push(pricearray, roundprice)
+    else
+        // Add the new price and label
+        array.push(pricearray, currentprice)
         array.push(labelarray, currentlabel)
-        label.set_text(currentlabel,label.get_text(currentlabel) + (HidePrice ? '' : ' ' + str.tostring(currentprice, '0.00')))
+        label.set_text(currentlabel, label.get_text(currentlabel) + (HidePrice ? '' : ' ' + str.tostring(currentprice, '0.00')))
         label.set_xy(currentlabel, limit_right, currentprice)
         label.set_textcolor(currentlabel, currentcolor)
     
+// *********************************************************************************************************************
+
 if barstate.islast
     // reset the arrays
     pricearray := array.new_float(0)
@@ -216,7 +225,7 @@ if barstate.islast
         line.set_xy1  (ema8_2Min_lne, MA_2Min_Time,ema8_2Min_price)   
         line.set_xy2  (ema8_2Min_lne,limit_right , ema8_2Min_price) 
         label.set_text(ema8_2Min_lbl, ema8_2Min_Text)
-        f_LevelMerge(pricearray, labelarray, ema8_2Min_price, ema8_2Min_lbl, MA_8EMA_Color)
+        f_LevelMerge(pricearray, labelarray, ema8_2Min_price, ema8_2Min_lbl, MA_8EMA_Color, mergeThreshold)
 
     //21 EMA (2 Minute)
     if is_21EMA_2Min_enabled
@@ -225,7 +234,7 @@ if barstate.islast
         line.set_xy1  (ema21_2Min_lne, MA_2Min_Time,ema21_2Min_price)   
         line.set_xy2  (ema21_2Min_lne,limit_right , ema21_2Min_price) 
         label.set_text(ema21_2Min_lbl, ema21_2Min_Text)
-        f_LevelMerge(pricearray, labelarray, ema21_2Min_price, ema21_2Min_lbl, MA_21EMA_Color)
+        f_LevelMerge(pricearray, labelarray, ema21_2Min_price, ema21_2Min_lbl, MA_21EMA_Color, mergeThreshold)
 
     //50 SMA (2 Minute)
     if is_50SMA_2Min_enabled
@@ -234,7 +243,7 @@ if barstate.islast
         line.set_xy1  (sma50_2Min_lne, MA_2Min_Time,sma50_2Min_price)   
         line.set_xy2  (sma50_2Min_lne,limit_right , sma50_2Min_price) 
         label.set_text(sma50_2Min_lbl, sma50_2Min_Text)
-        f_LevelMerge(pricearray, labelarray, sma50_2Min_price, sma50_2Min_lbl, MA_50SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma50_2Min_price, sma50_2Min_lbl, MA_50SMA_Color, mergeThreshold)
 
     //100 SMA (2 Minute)
     if is_100SMA_2Min_enabled
@@ -243,7 +252,7 @@ if barstate.islast
         line.set_xy1(sma100_2Min_lne, MA_2Min_Time,sma100_2Min_price)   
         line.set_xy2  (sma100_2Min_lne,limit_right , sma100_2Min_price) 
         label.set_text(sma100_2Min_lbl, sma100_2Min_Text)
-        f_LevelMerge(pricearray, labelarray, sma100_2Min_price, sma100_2Min_lbl, MA_100SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma100_2Min_price, sma100_2Min_lbl, MA_100SMA_Color, mergeThreshold)
 
     //200 SMA (2 Minute)
     if is_200SMA_2Min_enabled
@@ -252,7 +261,7 @@ if barstate.islast
         line.set_xy1  (sma200_2Min_lne, MA_2Min_Time,sma200_2Min_price)   
         line.set_xy2  (sma200_2Min_lne,limit_right , sma200_2Min_price) 
         label.set_text(sma200_2Min_lbl, sma200_2Min_Text)
-        f_LevelMerge(pricearray, labelarray, sma200_2Min_price, sma200_2Min_lbl, MA_200SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma200_2Min_price, sma200_2Min_lbl, MA_200SMA_Color, mergeThreshold)
 
     // 5-Minute Timeframe EMA Lines ----------------------------------------------------------------------------------------
     //8 EMA (5 Minute)
@@ -262,7 +271,7 @@ if barstate.islast
         line.set_xy1  (ema8_5Min_lne, MA_5Min_Time,ema8_5Min_price)   
         line.set_xy2  (ema8_5Min_lne,limit_right , ema8_5Min_price) 
         label.set_text(ema8_5Min_lbl, ema8_5Min_Text)
-        f_LevelMerge(pricearray, labelarray, ema8_5Min_price, ema8_5Min_lbl, MA_8EMA_Color)
+        f_LevelMerge(pricearray, labelarray, ema8_5Min_price, ema8_5Min_lbl, MA_8EMA_Color, mergeThreshold)
 
     //21 EMA (5 Minute)
     if is_21EMA_5Min_enabled
@@ -271,7 +280,7 @@ if barstate.islast
         line.set_xy1  (ema21_5Min_lne, MA_5Min_Time,ema21_5Min_price)   
         line.set_xy2  (ema21_5Min_lne,limit_right , ema21_5Min_price) 
         label.set_text(ema21_5Min_lbl, ema21_5Min_Text)
-        f_LevelMerge(pricearray, labelarray, ema21_5Min_price, ema21_5Min_lbl, MA_21EMA_Color)
+        f_LevelMerge(pricearray, labelarray, ema21_5Min_price, ema21_5Min_lbl, MA_21EMA_Color, mergeThreshold)
 
     //50 SMA (5 Minute)
     if is_50SMA_5Min_enabled
@@ -280,7 +289,7 @@ if barstate.islast
         line.set_xy1  (sma50_5Min_lne, MA_5Min_Time,sma50_5Min_price)   
         line.set_xy2  (sma50_5Min_lne,limit_right , sma50_5Min_price) 
         label.set_text(sma50_5Min_lbl, sma50_5Min_Text)
-        f_LevelMerge(pricearray, labelarray, sma50_5Min_price, sma50_5Min_lbl, MA_50SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma50_5Min_price, sma50_5Min_lbl, MA_50SMA_Color, mergeThreshold)
 
     //100 SMA (5 Minute)
     if is_100SMA_5Min_enabled
@@ -289,7 +298,7 @@ if barstate.islast
         line.set_xy1(sma100_5Min_lne, MA_5Min_Time,sma100_5Min_price)   
         line.set_xy2  (sma100_5Min_lne,limit_right , sma100_5Min_price) 
         label.set_text(sma100_5Min_lbl, sma100_5Min_Text)
-        f_LevelMerge(pricearray, labelarray, sma100_5Min_price, sma100_5Min_lbl, MA_100SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma100_5Min_price, sma100_5Min_lbl, MA_100SMA_Color, mergeThreshold)
 
     //200 SMA (5 Minute)
     if is_200SMA_5Min_enabled
@@ -298,7 +307,7 @@ if barstate.islast
         line.set_xy1  (sma200_5Min_lne, MA_5Min_Time,sma200_5Min_price)   
         line.set_xy2  (sma200_5Min_lne,limit_right , sma200_5Min_price) 
         label.set_text(sma200_5Min_lbl, sma200_5Min_Text)
-        f_LevelMerge(pricearray, labelarray, sma200_5Min_price, sma200_5Min_lbl, MA_200SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma200_5Min_price, sma200_5Min_lbl, MA_200SMA_Color, mergeThreshold)
 
     // Hourly Timeframe EMA Lines ------------------------------------------------------------------------------------------
     //8 EMA (Hourly)
@@ -308,7 +317,7 @@ if barstate.islast
         line.set_xy1  (ema8_1Hour_lne, MA_1Hour_Time,ema8_1Hour_price)   
         line.set_xy2  (ema8_1Hour_lne,limit_right , ema8_1Hour_price) 
         label.set_text(ema8_1Hour_lbl, ema8_1Hour_Text)
-        f_LevelMerge(pricearray, labelarray, ema8_1Hour_price, ema8_1Hour_lbl, MA_8EMA_Color)
+        f_LevelMerge(pricearray, labelarray, ema8_1Hour_price, ema8_1Hour_lbl, MA_8EMA_Color, mergeThreshold)
 
     //21 EMA (Hourly)
     if is_21EMA_1Hour_enabled
@@ -317,7 +326,7 @@ if barstate.islast
         line.set_xy1  (ema21_1Hour_lne, MA_1Hour_Time,ema21_1Hour_price)   
         line.set_xy2  (ema21_1Hour_lne,limit_right , ema21_1Hour_price) 
         label.set_text(ema21_1Hour_lbl, ema21_1Hour_Text)
-        f_LevelMerge(pricearray, labelarray, ema21_1Hour_price, ema21_1Hour_lbl, MA_21EMA_Color)
+        f_LevelMerge(pricearray, labelarray, ema21_1Hour_price, ema21_1Hour_lbl, MA_21EMA_Color, mergeThreshold)
 
     //50 SMA (Hourly)
     if is_50SMA_1Hour_enabled
@@ -326,7 +335,7 @@ if barstate.islast
         line.set_xy1  (sma50_1Hour_lne, MA_1Hour_Time,sma50_1Hour_price)   
         line.set_xy2  (sma50_1Hour_lne,limit_right , sma50_1Hour_price) 
         label.set_text(sma50_1Hour_lbl, sma50_1Hour_Text)
-        f_LevelMerge(pricearray, labelarray, sma50_1Hour_price, sma50_1Hour_lbl, MA_50SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma50_1Hour_price, sma50_1Hour_lbl, MA_50SMA_Color, mergeThreshold)
 
     //100 SMA (Hourly)
     if is_100SMA_1Hour_enabled
@@ -335,7 +344,7 @@ if barstate.islast
         line.set_xy1(sma100_1Hour_lne, MA_1Hour_Time,sma100_1Hour_price)   
         line.set_xy2  (sma100_1Hour_lne,limit_right , sma100_1Hour_price) 
         label.set_text(sma100_1Hour_lbl, sma100_1Hour_Text)
-        f_LevelMerge(pricearray, labelarray, sma100_1Hour_price, sma100_1Hour_lbl, MA_100SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma100_1Hour_price, sma100_1Hour_lbl, MA_100SMA_Color, mergeThreshold)
 
     //200 SMA (Hourly)
     if is_200SMA_1Hour_enabled
@@ -344,7 +353,7 @@ if barstate.islast
         line.set_xy1  (sma200_1Hour_lne, MA_1Hour_Time,sma200_1Hour_price)   
         line.set_xy2  (sma200_1Hour_lne,limit_right , sma200_1Hour_price) 
         label.set_text(sma200_1Hour_lbl, sma200_1Hour_Text)
-        f_LevelMerge(pricearray, labelarray, sma200_1Hour_price, sma200_1Hour_lbl, MA_200SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma200_1Hour_price, sma200_1Hour_lbl, MA_200SMA_Color, mergeThreshold)
 
     // Daily Timeframe EMA Lines -------------------------------------------------------------------------------------------
     //8 EMA (Daily)
@@ -354,7 +363,7 @@ if barstate.islast
         line.set_xy1  (ema8_1Day_lne, MA_1Day_Time,ema8_1Day_price)   
         line.set_xy2  (ema8_1Day_lne,limit_right , ema8_1Day_price) 
         label.set_text(ema8_1Day_lbl, ema8_1Day_Text)
-        f_LevelMerge(pricearray, labelarray, ema8_1Day_price, ema8_1Day_lbl, MA_8EMA_Color)
+        f_LevelMerge(pricearray, labelarray, ema8_1Day_price, ema8_1Day_lbl, MA_8EMA_Color, mergeThreshold)
 
     //21 EMA (Daily)
     if is_21EMA_1Day_enabled
@@ -363,7 +372,7 @@ if barstate.islast
         line.set_xy1  (ema21_1Day_lne, MA_1Day_Time,ema21_1Day_price)   
         line.set_xy2  (ema21_1Day_lne,limit_right , ema21_1Day_price) 
         label.set_text(ema21_1Day_lbl, ema21_1Day_Text)
-        f_LevelMerge(pricearray, labelarray, ema21_1Day_price, ema21_1Day_lbl, MA_21EMA_Color)
+        f_LevelMerge(pricearray, labelarray, ema21_1Day_price, ema21_1Day_lbl, MA_21EMA_Color, mergeThreshold)
 
     //50 SMA (Daily)
     if is_50SMA_1Day_enabled
@@ -372,7 +381,7 @@ if barstate.islast
         line.set_xy1  (sma50_1Day_lne, MA_1Day_Time,sma50_1Day_price)   
         line.set_xy2  (sma50_1Day_lne,limit_right , sma50_1Day_price) 
         label.set_text(sma50_1Day_lbl, sma50_1Day_Text)
-        f_LevelMerge(pricearray, labelarray, sma50_1Day_price, sma50_1Day_lbl, MA_50SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma50_1Day_price, sma50_1Day_lbl, MA_50SMA_Color, mergeThreshold)
 
     //100 SMA (Daily)
     if is_100SMA_1Day_enabled
@@ -381,7 +390,7 @@ if barstate.islast
         line.set_xy1(sma100_1Day_lne, MA_1Day_Time,sma100_1Day_price)   
         line.set_xy2  (sma100_1Day_lne,limit_right , sma100_1Day_price) 
         label.set_text(sma100_1Day_lbl, sma100_1Day_Text)
-        f_LevelMerge(pricearray, labelarray, sma100_1Day_price, sma100_1Day_lbl, MA_100SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma100_1Day_price, sma100_1Day_lbl, MA_100SMA_Color, mergeThreshold)
 
     //200 SMA (Daily)
     if is_200SMA_1Day_enabled
@@ -390,7 +399,7 @@ if barstate.islast
         line.set_xy1  (sma200_1Day_lne, MA_1Day_Time,sma200_1Day_price)   
         line.set_xy2  (sma200_1Day_lne,limit_right , sma200_1Day_price) 
         label.set_text(sma200_1Day_lbl, sma200_1Day_Text)
-        f_LevelMerge(pricearray, labelarray, sma200_1Day_price, sma200_1Day_lbl, MA_200SMA_Color)
+        f_LevelMerge(pricearray, labelarray, sma200_1Day_price, sma200_1Day_lbl, MA_200SMA_Color, mergeThreshold)
 
 // Alert calculations --------------------------------------------------------------------------------------------------
 calc_on_every_tick=true
@@ -400,7 +409,7 @@ ema8crossD   = ta.crossover(close, ema8_1Day_price)   or ta.crossunder(close, em
 ema21crossD  = ta.crossover(close, ema21_1Day_price)  or ta.crossunder(close, ema21_1Day_price)
 sma50crossD  = ta.crossover(close, sma50_1Day_price)  or ta.crossunder(close, sma50_1Day_price)
 sma200crossD = ta.crossover(close, sma200_1Day_price) or ta.crossunder(close, sma200_1Day_price)
-if ema8crossD 
+if ema8crossD
     alert("Crossing 8 EMA (Daily) at $" + str.tostring (close) , alert.freq_once_per_bar)
 if ema21crossD
     alert("Crossing 21 EMA (Daily) at $" + str.tostring (close) , alert.freq_once_per_bar)
